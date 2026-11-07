@@ -1,6 +1,6 @@
 // Our Family Calendar - offline support.
 // Bump CACHE when you want every device to drop old files.
-const CACHE = 'famcal-v1';
+const CACHE = 'famcal-v2';
 const CORE = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -28,7 +28,7 @@ self.addEventListener('fetch', e => {
     return;
   }
   // Own files and Google Fonts: serve the saved copy, refresh it in the background.
-  if (u.origin === location.origin || u.hostname.endsWith('googleapis.com') || u.hostname.endsWith('gstatic.com')) {
+  if (u.origin === location.origin || u.hostname.endsWith('googleapis.com') || u.hostname.endsWith('gstatic.com') || u.hostname === 'cdn.jsdelivr.net') {
     e.respondWith(
       caches.match(r).then(hit => {
         const net = fetch(r).then(res => {

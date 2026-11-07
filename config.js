@@ -2,7 +2,7 @@
 // The publishable (anon) key is designed to be visible in the browser; row level security protects the data.
 // NEVER paste the secret / service_role key here, or anywhere in this repo.
 window.FC_CONFIG = {
-  SUPABASE_URL: '',   // e.g. https://abcdxyz.supabase.co
-  SUPABASE_KEY: '',   // the publishable (anon) key
-  VAPID_PUBLIC_KEY: '' // stage 4 (push notifications): public half only
+  SUPABASE_URL: 'https://gyiqxlwjaykntljfvwiu.supabase.co',
+  SUPABASE_KEY: 'sb_publishable_ILMIb7G_JUSJXYU7oewzAA_yG9TMgKH',
+  VAPID_PUBLIC_KEY: ''
 };

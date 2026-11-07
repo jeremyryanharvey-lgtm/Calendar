@@ -311,7 +311,7 @@ function seed(){
 let S=null;
 try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r)}catch(e){}
 if(!S)S=seed();
-const save=()=>{S.doneAt=S.doneAt||{};for(const k in S.done)if(!S.doneAt[k])S.doneAt[k]=Date.now();for(const k in S.doneAt)if(!S.done[k])delete S.doneAt[k];try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{S.doneAt=S.doneAt||{};for(const k in S.done)if(!S.doneAt[k])S.doneAt[k]=Date.now();for(const k in S.doneAt)if(!S.done[k])delete S.doneAt[k];try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudDirty==='function')cloudDirty()};
 let view='day',cur=new Date(),sel=null,editing=null,editDs=null,type='event',color=COLORS[0];
 const person=id=>S.people.find(p=>p.id===id)||S.people[0];
 function occurs(it,ds){
@@ -650,7 +650,7 @@ function loadDemo(){
  });
  save();
 }
-setTimeout(()=>{if(S.demoV!==1){loadDemo();S.demoV=1;save();render()}},0);
+setTimeout(()=>{if(S.demoV!==1&&!(S.cloud&&S.cloud.on)){loadDemo();S.demoV=1;save();render()}},0);
 setTimeout(()=>{const s=$('#splash');if(s)s.remove()},8200);
 // logo shrinks into the home button while the words and silhouettes fade out
 function logoFly(){
@@ -775,7 +775,7 @@ function cloudR(){
  }else if(c.state==='nohome'){
   h=`<p class="note">Signed in as ${esc(c.email)}. Not part of a family yet.</p><label>Start a new family (you become a parent)</label><input id="cName" placeholder="Our Family"><button class="btn primary wide" id="cCreate" style="margin-top:8px">Create family</button><label>Or join with a code from a parent</label><input id="cJoin" placeholder="Code" maxlength="12"><button class="btn wide" id="cJoinBtn" style="margin-top:8px">Join</button><button class="btn wide" id="cOut" style="margin-top:8px">Sign out</button>`;
  }else if(c.state==='in'){
-  h=`<p><b>${esc(c.name||'Our Family')}</b></p><p class="note">Signed in as ${esc(c.email)} \u00b7 ${c.role==='parent'?'parent':'family device'} \u00b7 ${c.members} sign-in${c.members===1?'':'s'} in this family</p>`+(c.role==='parent'?`<label>Add another sign-in</label><div class="two"><button class="btn" id="cInvD">Family device code</button><button class="btn" id="cInvP">Parent code</button></div><p class="note" id="cCodeOut"></p>`:'')+`<p class="note">Your calendar still saves on this device only. Syncing between devices is the next step.</p><button class="btn wide" id="cOut">Sign out</button>`;
+  h=`<p><b>${esc(c.name||'Our Family')}</b></p><p class="note">Signed in as ${esc(c.email)} \u00b7 ${c.role==='parent'?'parent':'family device'} \u00b7 ${c.members} sign-in${c.members===1?'':'s'} in this family</p>`+(c.role==='parent'?`<label>Add another sign-in</label><div class="two"><button class="btn" id="cInvD">Family device code</button><button class="btn" id="cInvP">Parent code</button></div><p class="note" id="cCodeOut"></p>`:'')+`${cloudSyncHTML(c)}<button class="btn wide" id="cOut">Sign out</button>`;
  }
  $('#cloudBody').innerHTML=h+(cloudMsg?`<p class="note">${esc(cloudMsg)}</p>`:'');
 }
@@ -788,11 +788,138 @@ $('#cloudBody').onclick=async e=>{
   if(id==='cSignIn'){const em=$('#cEmail').value.trim(),pw=$('#cPass').value;if(!em||!pw)return;const r=await FC.signInWithPassword(em,pw);if(r.error)throw r.error;await cloudLoad()}
   else if(id==='cCreate'){const r=await FC.createHousehold($('#cName').value.trim());if(r.error)throw r.error;await cloudLoad()}
   else if(id==='cJoinBtn'){const r=await FC.joinHousehold($('#cJoin').value.trim());if(r.error)throw r.error;await cloudLoad()}
+  else if(id==='cUp'||id==='cDown'){
+   S.cloud={hid:cloudInfo.hid,on:true};
+   if(id==='cUp')putSnap(emptySnap());else putSnap(snapOf(cloudRows()));
+   save();cloudStatus='';await cloudSync();cloudSub();
+  }
+  else if(id==='cNow'){await cloudSync()}
+  else if(id==='cOff'){S.cloud.on=false;save();if(cloudCh){FC.sb.removeChannel(cloudCh);cloudCh=null}cloudStatus=''}
   else if(id==='cOut'){await FC.signOut();await cloudLoad()}
   else if(id==='cInvD'||id==='cInvP'){const r=await FC.createInvite(id==='cInvP'?'parent':'device',cloudInfo.hid);if(r.error)throw r.error;cloudR();$('#cCodeOut').textContent='Code (works once, for 2 days): '+r.data.code;return}
  }catch(err){cloudMsg=String(err.message||err)}
  cloudR();
 };
+// ---- cloud sync engine ----
+var cloudBusy=false,cloudAgain=false,cloudStatus='',cloudApplying=false,cloudDT=null,cloudCh=null,cloudT=null;
+const SNAPKEY='famcal-snap';
+const emptySnap=()=>({people:{},items:{},done:{},payouts:{}});
+function getSnap(){try{return JSON.parse(localStorage.getItem(SNAPKEY))||emptySnap()}catch(e){return emptySnap()}}
+function putSnap(sn){try{localStorage.setItem(SNAPKEY,JSON.stringify(sn))}catch(e){}}
+function cloudRows(){
+ const people={},items={},done={},payouts={};
+ S.people.forEach(p=>{people[p.id]={id:p.id,name:p.name,color:p.color}});
+ S.items.forEach(it=>{items[it.id]={id:it.id,title:it.title,type:it.type,who:whoOf(it),date:it.date,time:it.time||'',repeat:it.repeat||'none',notes:it.notes||'',color:it.color||'#7c5cff',pay:Math.round((+it.pay||0)*100)/100,skip:(it.skip||[]).slice().sort(),until:it.until||null,source:it.source||'app'}});
+ Object.keys(S.done||{}).forEach(k=>{
+  if(!S.done[k])return;const i=k.indexOf('|'),id=k.slice(0,i),day=k.slice(i+1);
+  if(items[id])done[k]={item_id:id,day,done_at:new Date((S.doneAt&&S.doneAt[k])||Date.parse(day)).toISOString()};
+ });
+ (S.payouts||[]).forEach(p=>{payouts[p.id]={id:p.id,who:p.who,amount:Math.round(p.amount*100)/100,paid_at:new Date(p.at).toISOString()}});
+ return{people,items,done,payouts};
+}
+function snapOf(rows){const sn=emptySnap();for(const t in sn)for(const k in rows[t])sn[t][k]=JSON.stringify(rows[t][k]);return sn}
+async function cloudAll(t,ord){
+ let out=[],from=0;
+ for(;;){
+  let q=window.FC.sb.from(t).select('*').eq('household_id',S.cloud.hid);
+  ord.forEach(c=>{q=q.order(c)});
+  const r=await q.range(from,from+999);
+  if(r.error)throw r.error;
+  out=out.concat(r.data);
+  if(r.data.length<1000)break;
+  from+=1000;
+ }
+ return out;
+}
+async function cloudPush(){
+ const FC=window.FC,hid=S.cloud.hid,cur=cloudRows(),sn=getSnap(),up={},del={};
+ for(const t in sn){up[t]=Object.keys(cur[t]).filter(k=>sn[t][k]!==JSON.stringify(cur[t][k]));del[t]=Object.keys(sn[t]).filter(k=>!(k in cur[t]))}
+ let err='';
+ const H=r=>Object.assign({household_id:hid},r);
+ const run=async(t,fn)=>{
+  if(!up[t].length&&!del[t].length)return;
+  try{await fn();up[t].forEach(k=>{sn[t][k]=JSON.stringify(cur[t][k])});del[t].forEach(k=>{delete sn[t][k]})}
+  catch(e){err=err||String(e.message||e)}
+ };
+ await run('people',async()=>{
+  if(up.people.length){const r=await FC.sb.from('people').upsert(up.people.map(k=>H(cur.people[k])),{onConflict:'household_id,id'});if(r.error)throw r.error}
+  if(del.people.length){const r=await FC.sb.from('people').delete().eq('household_id',hid).in('id',del.people);if(r.error)throw r.error}
+ });
+ await run('items',async()=>{
+  if(up.items.length){const r=await FC.sb.from('items').upsert(up.items.map(k=>H(cur.items[k])),{onConflict:'household_id,id'});if(r.error)throw r.error}
+  if(del.items.length){const r=await FC.sb.from('items').delete().eq('household_id',hid).in('id',del.items);if(r.error)throw r.error}
+ });
+ await run('done',async()=>{
+  if(up.done.length){const r=await FC.sb.from('completions').upsert(up.done.map(k=>H(cur.done[k])),{onConflict:'household_id,item_id,day',ignoreDuplicates:true});if(r.error)throw r.error}
+  for(const k of del.done){const i=k.indexOf('|');const r=await FC.sb.from('completions').delete().eq('household_id',hid).eq('item_id',k.slice(0,i)).eq('day',k.slice(i+1));if(r.error)throw r.error}
+ });
+ await run('payouts',async()=>{
+  if(up.payouts.length){const r=await FC.sb.from('payouts').upsert(up.payouts.map(k=>H(cur.payouts[k])),{onConflict:'household_id,id'});if(r.error)throw r.error}
+  if(del.payouts.length){const r=await FC.sb.from('payouts').delete().eq('household_id',hid).in('id',del.payouts);if(r.error)throw r.error}
+ });
+ putSnap(sn);
+ return err;
+}
+async function cloudPull(){
+ const [pe,it,co,pa]=await Promise.all([cloudAll('people',['id']),cloudAll('items',['id']),cloudAll('completions',['item_id','day']),cloudAll('payouts',['id'])]);
+ const people=pe.map(r=>({id:r.id,name:r.name,color:r.color}));
+ if(!people.some(p=>p.id==='all'))people.unshift({id:'all',name:'Everyone',color:'#7c5cff'});
+ const items=it.map(r=>{
+  const o={id:r.id,title:r.title,type:r.type,who:r.who,date:r.date,time:r.time,repeat:r.repeat,notes:r.notes,color:r.color,pay:Number(r.pay)||0};
+  if(r.skip&&r.skip.length)o.skip=r.skip;
+  if(r.until)o.until=r.until;
+  if(r.source&&r.source!=='app')o.source=r.source;
+  return o;
+ });
+ const done={},doneAt={};
+ co.forEach(r=>{const k=r.item_id+'|'+r.day;done[k]=true;doneAt[k]=Date.parse(r.done_at)});
+ const payouts=pa.map(r=>({id:r.id,who:r.who,at:Date.parse(r.paid_at),amount:Number(r.amount)}));
+ cloudApplying=true;
+ try{
+  S.people=people;S.items=items;S.done=done;S.doneAt=doneAt;S.payouts=payouts;
+  if(S.me&&!people.some(p=>p.id===S.me))S.me='all';
+  save();putSnap(snapOf(cloudRows()));
+ }finally{cloudApplying=false}
+ render();
+}
+async function cloudSync(){
+ const FC=window.FC;
+ if(!FC||!FC.ready||!S.cloud||!S.cloud.on)return;
+ if(cloudBusy){cloudAgain=true;return}
+ cloudBusy=true;
+ try{
+  const ses=await FC.session();
+  if(!ses){cloudStatus='Signed out. Changes stay on this device.';return}
+  const perr=await cloudPush();
+  if(perr&&!/row-level security|permission denied/i.test(perr)){cloudStatus='Sync problem: '+perr+' (will retry)';return}
+  await cloudPull();
+  cloudStatus=(perr?'Some changes were not allowed for this sign-in. ':'')+'Synced '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+ }catch(err){cloudStatus='Sync problem: '+String(err.message||err)}
+ finally{cloudBusy=false}
+ if(cloudAgain){cloudAgain=false;setTimeout(cloudSync,300)}
+}
+function cloudDirty(){
+ if(cloudApplying||!S.cloud||!S.cloud.on)return;
+ clearTimeout(cloudDT);cloudDT=setTimeout(cloudSync,900);
+}
+function cloudSub(){
+ const FC=window.FC;
+ if(!FC||!FC.ready||!S.cloud||!S.cloud.on||cloudCh)return;
+ const hid=S.cloud.hid,kick=()=>{clearTimeout(cloudT);cloudT=setTimeout(cloudSync,400)};
+ cloudCh=FC.sb.channel('fc-'+hid);
+ ['people','items','completions','payouts'].forEach(t=>cloudCh.on('postgres_changes',{event:'*',schema:'public',table:t,filter:'household_id=eq.'+hid},kick));
+ cloudCh.subscribe();
+}
+// ---- end cloud sync engine ----
+
+function cloudSyncHTML(c){
+ if(S.cloud&&S.cloud.on&&S.cloud.hid===c.hid)return `<p class="note">\u2705 Sync is on for this device. ${esc(cloudStatus)}</p><div class="two"><button class="btn" id="cNow">Sync now</button><button class="btn" id="cOff">Turn off</button></div>`;
+ return `<label>Sync this device</label><p class="note">${c.role==='parent'?'Upload merges this device\u2019s calendar into the family cloud. ':''}Use replaces this device\u2019s calendar with the family\u2019s.</p>`+(c.role==='parent'?'<button class="btn primary wide" id="cUp" style="margin-bottom:8px">\u2b06\ufe0f Upload this device\u2019s calendar</button>':'')+'<button class="btn wide" id="cDown">\u2b07\ufe0f Use the family calendar on this device</button>';
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudSync()});
+addEventListener('online',()=>cloudSync());
+setInterval(()=>{if(!document.hidden)cloudSync()},60000);
+cloudSync();cloudSub();
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}));
 </script>
 </body>

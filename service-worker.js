@@ -1,6 +1,6 @@
 // Our Family Calendar - offline support.
 // Bump CACHE when you want every device to drop old files.
-const CACHE = 'famcal-v2';
+const CACHE = 'famcal-v3';
 const CORE = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

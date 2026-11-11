@@ -1,6 +1,6 @@
 // Our Family Calendar - offline support.
 // Bump CACHE when you want every device to drop old files.
-const CACHE = 'famcal-v3';
+const CACHE = 'famcal-v4';
 const CORE = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -39,4 +39,24 @@ self.addEventListener('fetch', e => {
       })
     );
   }
+});
+
+// Reminder notifications (Web Push). Every push must show a notification.
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = {}; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Family Calendar', {
+    body: d.body || 'You have a reminder',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    tag: d.tag || undefined,
+    data: { url: './' }
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
+    for (const c of cs) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow('./');
+  }));
 });

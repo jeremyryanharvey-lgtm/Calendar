@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Penalty Spell-out · Year 6</title>
+<style>
+:root{--bg:#f4f7f2;--fg:#17301f;--card:#fff;--line:#cfdccf;--acc:#1c8a3c;--bad:#c93a3a;--pitch:#3aa655;--pitch2:#339a4d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a13;--fg:#e8f3ea;--card:#18271d;--line:#2b4033;--acc:#3fc062;--bad:#ef6a6a;--pitch:#237a3b;--pitch2:#1e6f35;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a13;--fg:#e8f3ea;--card:#18271d;--line:#2b4033;--acc:#3fc062;--bad:#ef6a6a;--pitch:#237a3b;--pitch2:#1e6f35;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100%}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:.2em 0}p.sub{margin:0 0 14px;opacity:.75}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-weight:600;margin-bottom:6px}
+select,input[type=text]{width:100%;font-size:1.1rem;padding:12px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--fg)}
+button{font-size:1.05rem;font-weight:700;padding:12px 18px;border-radius:10px;border:0;background:var(--acc);color:#fff;cursor:pointer}
+button.alt{background:transparent;color:var(--fg);border:2px solid var(--line)}
+.row{display:flex;gap:8px;margin-top:10px}.row>*{flex:1}
+.hide{display:none!important}
+#pitch{position:relative;height:240px;border-radius:14px;overflow:hidden;background:repeating-linear-gradient(90deg,var(--pitch) 0 40px,var(--pitch2) 40px 80px);border:1px solid var(--line);margin-bottom:12px}
+#goal{position:absolute;left:50%;top:18px;width:230px;height:100px;margin-left:-115px;border:5px solid #fff;border-bottom:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.35) 0 1px,transparent 1px 10px),repeating-linear-gradient(90deg,rgba(255,255,255,.35) 0 1px,transparent 1px 10px)}
+#keeper{position:absolute;left:50%;top:48px;width:34px;height:52px;margin-left:-17px;background:#f2b705;border-radius:16px 16px 6px 6px;transition:transform .45s ease-out;z-index:2}
+#keeper:before{content:"";position:absolute;left:7px;top:-14px;width:20px;height:20px;border-radius:50%;background:#e8b48a}
+#keeper:after{content:"";position:absolute;left:-14px;top:8px;width:62px;height:8px;border-radius:4px;background:#f2b705}
+#ball{position:absolute;left:50%;top:190px;width:26px;height:26px;margin-left:-13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#ddd);border:2px solid #222;transition:transform .5s ease-out,top .5s ease-out;z-index:3}
+#spot{position:absolute;left:50%;top:210px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#fff;opacity:.8}
+#msg{position:absolute;left:0;right:0;top:120px;text-align:center;font-size:2.2rem;font-weight:900;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6);z-index:5;pointer-events:none}
+#score{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:8px}
+.dots{display:flex;gap:6px}.dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--line)}.dot.g{background:var(--acc);border-color:var(--acc)}.dot.m{background:var(--bad);border-color:var(--bad)}
+#blanks{font-size:1.4rem;letter-spacing:.2em;text-align:center;margin:6px 0;min-height:1.6em;opacity:.7}
+#fb{min-height:1.5em;text-align:center;font-weight:600;margin-top:8px}
+.ok{color:var(--acc)}.no{color:var(--bad)}
+#kb{margin-top:10px;display:flex;flex-direction:column;gap:6px;user-select:none;-webkit-user-select:none}
+#kb .kr{display:flex;gap:5px;justify-content:center}
+#kb button{flex:1;max-width:48px;min-width:0;height:48px;padding:0;font-size:1.15rem;text-transform:uppercase;background:var(--bg);color:var(--fg);border:2px solid var(--line);touch-action:manipulation}
+#kb button:active{background:var(--acc);color:#fff}
+#kb button.wide{max-width:64px;background:var(--line)}
+</style>
+</head>
+<body>
+<main>
+<h1>⚽ Penalty Spell-out</h1>
+<p class="sub">Listen to the word, spell it correctly and score!</p>
+
+<section id="setup" class="card">
+  <label for="step">Choose this week’s spelling list</label>
+  <select id="step"></select>
+  <div id="preview" class="sub" style="margin:10px 0 0;font-size:.9rem;opacity:.75"></div>
+  <div id="vwrap"><label for="vsel" style="margin-top:12px">Voice</label><div class="row" style="margin-top:0"><select id="vsel"></select><button type="button" class="alt" id="vtest" style="flex:0 0 auto">▶ Test</button></div></div>
+  <div class="row"><button id="start">Start match</button></div>
+</section>
+
+<section id="game" class="hide">
+  <div id="score"><span id="title"></span><span class="dots" id="dots"></span></div>
+  <div id="pitch"><div id="goal"></div><div id="keeper"></div><div id="spot"></div><div id="ball"></div><div id="msg"></div></div>
+  <div class="card">
+    <div class="row" style="margin-top:0"><button class="alt" id="say">🔊 Hear word</button><button class="alt" id="slow">🐢 Slowly</button></div>
+    <div id="blanks"></div>
+    <input type="text" id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Tap the letters below" aria-label="Your spelling" readonly inputmode="none">
+    <div id="kb" aria-label="On-screen keyboard"></div>
+    <div class="row"><button id="kick">Take the kick</button></div>
+    <div id="fb"></div>
+  </div>
+</section>
+
+<section id="end" class="card hide" style="text-align:center">
+  <h2 id="endh" style="margin:.2em 0"></h2><p id="endp"></p>
+  <div id="miss" style="text-align:left"></div>
+  <div class="row"><button id="again">Play again</button><button class="alt" id="menu">Change list</button></div>
+</section>
+</main>
+<script>
+const T=[["Autumn 1",[
+["Short /i/ spelled ‘y’","antonym crystal lyrics mystery oxygen rhythm symbol symptom system typical"],
+["Long /igh/ spelled ‘y’","apply hygiene hyphen identify multiply occupy python recycle rhyme supply"],
+["Challenge words","ancient cemetery criticise equipped government leisure opportunity recognise sincerely variety"],
+["‘cial’ after a vowel","antisocial artificial beneficial crucial facial official racial social special superficial"],
+["Words with ‘tial’","confidential essential influential martial partial potential sequential spatial substantial torrential"],
+["Challenge words","amateur category correspond environment frequently language occur queue signature twelfth"]]],
+["Autumn 2",[
+["Challenge words","appreciate communicate definite exaggerate harass marvellous persuade relevant stomach vehicle"],
+["/oa/ spelled ‘ou’ or ‘ow’","blown known mould poultry shallow shoulder smoulder soul thrown window"],
+["Soft ‘c’ spelled ‘ce’","celebrate cemetery certificate deceased December hindrance necessary nuisance prejudice sacrifice"],
+["Challenge words","apparent committee curiosity especially guarantee lightning parliament recommend soldier vegetable"],
+["/f/ spelled ‘ph’","alphabet elephant dolphin graph pamphlet pheasant phone photo physical sphere"],
+["Challenge words","according awkward conscious dictionary familiar individual neighbour profession sacrifice system"]]],
+["Spring 1",[
+["Suffix ‘-ably’","adorably believably changeably comfortably considerably dependably noticeably reasonably tolerably valuably"],
+["Suffix ‘-ible’","forcible horrible incredible legible possible responsible reversible sensible terrible visible"],
+["Challenge words","attached community desperate excellent hindrance mischievous physical restaurant sufficient yacht"],
+["Suffix ‘-ibly’","forcibly horribly incredibly legibly possibly responsibly reversibly sensibly terribly visibly"],
+["‘-ent’ and ‘-ence’","convenience convenient difference different evidence evident excellence excellent silence silent"],
+["Challenge words","accommodate available competition determined existence identity muscle prejudice rhyme suggest"]]],
+["Spring 2",[
+["Challenge words","aggressive bruise convenience embarrass forty interrupt occupy pronunciation shoulder thorough"],
+["‘-er’, ‘-or’ and ‘-ar’","calendar computer customer interior particular popular radiator shoulder soldier superior"],
+["Challenge words","achieve bargain controversy disastrous foreign interfere nuisance programme secretary temperature"],
+["Words beginning ‘acc-’","accentuate access accommodate accompany accomplish accost accrue accumulate accuracy accuse"],
+["Prefixes dis-, un-, over-, im-","disappointed dissatisfied dissimilar impatient overreact overrule overseas unnatural unnecessary unsure"],
+["Challenge words","accompany average conscience develop explanation immediately necessary privilege rhythm symbol"]]],
+["Summer 1",[
+["Origins in other languages","ballet blizzard bungalow easel gymkhana hoist origin pyjamas restaurant veranda"],
+["Grammar vocabulary 1","adverb ambiguity bracket clause cohesion determiner modal parenthesis pronoun relative"],
+["Grammar vocabulary 2","active antonym colon ellipsis hyphen object passive punctuation subject synonym"],
+["Prefix ‘over-’","overbalance overcoat overcook overlooked overpaid overreact overslept overthrow overtired overturned"],
+["Suffix ‘-ful’","beautiful boastful doubtful faithful fanciful fearful merciful pitiful plentiful thankful"],
+["Adjectives for settings","bustling magnificent majestic noiseless picturesque regal sinister spectacular tranquil unsightly"]]],
+["Summer 2",[
+["Adjectives for feelings","apprehensive delighted despondent euphoric incensed jittery optimistic positive sanguine terrified"],
+["Adjectives for characters","amiable courageous delightful disagreeable exquisite gargantuan grotesque obnoxious repugnant valiant"],
+["Nouns and verbs","contest freeze impact increase object permit produce silence subject transport"],
+["Unstressed vowel sounds","company definitely desperate environment explanatory jewellery poisonous reference secretary temperature"],
+["Adverbs of determination","continually determinedly diligently intently persistently purposefully relentlessly repeatedly resolutely tenaciously"],
+["Mathematical vocabulary","addition calculation circumference diameter division horizontal multiplication parallel subtraction vertical"]]]];
+const S=[];let n=0;const sel=document.getElementById("step");
+T.forEach(([t,a])=>{const g=document.createElement("optgroup");g.label=t;a.forEach(([o,w])=>{n++;S.push({n,o,w:w.split(" ")});const e=document.createElement("option");e.value=n-1;e.textContent="Step "+n+" – "+o;g.appendChild(e)});sel.appendChild(g)});
+const $=i=>document.getElementById(i);
+const prev=()=>{$("preview").textContent=S[sel.value].w.join(", ")};sel.onchange=prev;prev();
+let q,goals,kicks,missed,cur,busy;
+const show=id=>["setup","game","end"].forEach(x=>$(x).classList.toggle("hide",x!==id));
+const shuf=a=>{a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a};
+let VOICE=null,VOICES=[];
+function vscore(v){let s=0;const n=v.name,l=v.lang.replace("_","-");if(l==="en-GB")s+=10;else if(/^en-(AU|IE|ZA|NZ)/.test(l))s+=4;else if(/^en/.test(l))s+=2;else return -99;if(/natural|neural|premium|enhanced|online/i.test(n))s+=8;if(/google uk english|daniel|serena|kate|stephanie|sonia|libby|maisie|ryan|arthur|martha|oliver|siri/i.test(n))s+=5;if(/espeak|compact|albert|bad news|bahh|bells|boing|bubbles|cellos|fred|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|kathy/i.test(n))s-=20;if(/karen/i.test(n)&&/AU/.test(l))s+=30;return s}
+function loadVoices(){try{const prev=VOICE&&VOICE.voiceURI;VOICES=speechSynthesis.getVoices().filter(v=>vscore(v)>-50).sort((a,b)=>vscore(b)-vscore(a));VOICE=VOICES.find(v=>v.voiceURI===prev)||VOICES[0]||null;const s=$("vsel");s.innerHTML=VOICES.map((v,k)=>'<option value="'+k+'">'+v.name+' ('+v.lang+')</option>').join("");s.value=Math.max(0,VOICES.indexOf(VOICE));$("vwrap").classList.toggle("hide",VOICES.length<1)}catch(e){}}
+function speak(w,rate,fb){try{const ss=speechSynthesis;const busy=ss.speaking||ss.pending;if(busy)ss.cancel();ss.resume();const u=new SpeechSynthesisUtterance(w);u.lang=VOICE&&!fb?VOICE.lang:"en-GB";u.rate=rate||.85;u.pitch=1;if(VOICE&&!fb)u.voice=VOICE;u.onerror=e=>{if(!fb&&e.error!=="canceled"&&e.error!=="interrupted")speak(w,rate,true)};if(busy)setTimeout(()=>ss.speak(u),80);else ss.speak(u)}catch(e){$("fb").textContent="Word: "+w}}
+function start(){const st=S[sel.value];const a=shuf(st.w),b=shuf(st.w);if(b[0]===a[a.length-1])b.push(b.shift());q=a.concat(b);goals=0;kicks=0;missed=new Set();busy=false;
+ $("title").textContent="Step "+st.n+" · "+st.o;show("game");render();next()}
+function render(){$("dots").textContent="⚽ "+goals+" goals · "+q.length+" to go"}
+function next(){cur=q.shift();busy=false;render();$("ans").value="";$("fb").textContent="";$("msg").textContent="";
+ $("blanks").textContent=cur.split("").map(()=>"_").join(" ");
+ const b=$("ball"),k=$("keeper");b.style.transition=k.style.transition="none";b.style.transform=k.style.transform="";b.style.top="190px";
+ void b.offsetWidth;b.style.transition=k.style.transition="";$("ans").focus();setTimeout(()=>speak(cur),250)}
+function kick(){if(busy)return;const a=$("ans").value.trim().toLowerCase();if(!a)return;busy=true;
+ const ok=a===cur.toLowerCase();const dir=Math.random()<.5?-1:1;const b=$("ball"),k=$("keeper");
+ b.style.top="60px";b.style.transform="translateX("+dir*70+"px)";
+ k.style.transform=ok?"translateX("+(-dir*70)+"px) rotate("+(-dir*35)+"deg)":"translateX("+dir*70+"px) rotate("+(dir*35)+"deg)";
+ $("msg").textContent=ok?"GOAL! ⚽":"SAVED! 🧤";
+ $("fb").innerHTML=ok?'<span class="ok">Correct: '+cur+'</span>':'<span class="no">Not quite. It is spelled: <b>'+cur+'</b> (you typed '+a.replace(/</g,"&lt;")+')</span>';
+ kicks++;if(ok)goals++;else{missed.add(cur);q.splice(Math.min(3,q.length),0,cur);speak(cur.split("").join(", "),.7)}render();
+ setTimeout(()=>{q.length?next():finish()},ok?1700:3200)}
+function finish(){show("end");$("endh").textContent=missed.size===0?"🏆 Perfect shootout!":"Full time! All words mastered";
+ $("endp").textContent="You scored "+goals+" goals from "+kicks+" kicks. Every word was spelled at least twice.";
+ const m=[...missed];$("miss").innerHTML=m.length?"<b>Tricky ones to practise:</b> "+m.join(", "):""}
+$("start").onclick=start;$("again").onclick=start;$("menu").onclick=()=>show("setup");
+$("kick").onclick=kick;document.addEventListener("keydown",e=>{if($("game").classList.contains("hide")||e.ctrlKey||e.metaKey||e.altKey)return;if(e.key==="Enter"){e.preventDefault();kick()}else if(e.key==="Backspace"){key("⌫")}else if(/^[a-z]$/i.test(e.key)){key(e.key.toLowerCase())}});
+$("say").onclick=()=>speak(cur);$("slow").onclick=()=>speak(cur,.45);
+const LN={a:"ay",b:"bee",c:"see",d:"dee",e:"ee",f:"eff",g:"jee",h:"aitch",i:"eye",j:"jay",k:"kay",l:"el",m:"em",n:"en",o:"oh",p:"pee",q:"queue",r:"ar",s:"ess",t:"tee",u:"you",v:"vee",w:"double you",x:"ex",y:"why",z:"zed"};
+function key(k){if(busy)return;const a=$("ans");if(k==="⌫")a.value=a.value.slice(0,-1);else if(a.value.length<20){a.value+=k;speak(LN[k]||k,1.1)}$("blanks").textContent=cur.split("").map((c,j)=>a.value[j]||"_").join(" ")}
+$("kb").innerHTML=["qwertyuiop","asdfghjkl","zxcvbnm⌫"].map(r=>'<div class="kr">'+r.split("").map(c=>'<button type="button" data-k="'+c+'"'+(c==="⌫"?' class="wide" aria-label="Delete"':"")+'>'+c+'</button>').join("")+'</div>').join("");
+$("kb").addEventListener("pointerdown",e=>{const b=e.target.closest("button");if(b){e.preventDefault();key(b.dataset.k)}});
+if("speechSynthesis" in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices;$("vsel").onchange=()=>{VOICE=VOICES[$("vsel").value];speak("Let’s score a goal!",.95)};$("vtest").onclick=()=>speak("Let’s score a goal!",.95)}
+</script>
+</body>
+</html>

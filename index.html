@@ -118,7 +118,7 @@ input,select,textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12
 .whos button{display:flex;align-items:center;gap:6px;justify-content:flex-start;padding:8px 14px;border-radius:999px;background:var(--bg);border:3px solid transparent}
 .whos button.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 18%,var(--card))}
 #meList{flex-direction:column;align-items:stretch}
-.pig{grid-column:4;grid-row:2;justify-self:center;width:46px;height:46px;padding:0;border-radius:50%;display:grid;place-items:center}
+.pig{grid-column:4;grid-row:2;justify-self:center;width:46px;height:46px;padding:0;border-radius:50%;display:none;place-items:center}
 .pig .pgi{width:30px;height:30px}
 .pgi{width:1.15em;height:1.15em;vertical-align:-.2em}
 .pay{display:inline-block;font-size:12px;font-weight:900;background:#fff3c4;color:#7a5a00;border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle}
@@ -226,6 +226,7 @@ html,body{overflow-x:hidden}
 <label>Repeat</label>
 <select id="rep"><option value="none">Never</option><option value="daily">Every day</option><option value="weekdays">School days (Mon–Fri)</option><option value="weekly">Every week</option></select>
 <label>Color dot</label><div class="sw" id="sw"></div>
+<div id="urlBox"><label>Homework link (optional)</label><input id="url" type="url" inputmode="url" placeholder="https://…" autocapitalize="off" autocorrect="off" spellcheck="false"><p class="note" id="urlErr" style="color:#e5384b;display:none;margin:4px 0 0">That link doesn’t look right. Check it and try again.</p></div>
 <label>Notes</label><textarea id="notes" rows="2"></textarea>
 <div class="acts"><button class="btn del" id="del">Delete</button><button class="btn" id="cancel">Cancel</button><button class="btn primary" id="save">Save</button></div>
 </dialog>
@@ -462,10 +463,15 @@ $('#remBody').onclick=e=>{
 // chore / homework sheet: mark done or edit
 let tk=null;
 const REP={daily:'Every day',weekdays:'School days',weekly:'Every week'};
+function normUrl(v){
+ v=String(v||'').trim();if(!v)return '';
+ if(!/^https?:\/\//i.test(v))v='https://'+v;
+ try{const u=new URL(v);return /^https?:$/.test(u.protocol)&&u.hostname.includes('.')?u.href:''}catch(e){return ''}
+}
 function openTask(it,ds){
  if(!it)return;
  tk={it,ds};const p=person(it.who),dn=!!S.done[it.id+'|'+ds],late=!dn&&ds<ymd(new Date());
- $('#taskBody').innerHTML=`<div class="tcard" style="--c:${it.color}"><div class="tt">${IC(it)} ${esc(it.title)}</div><div class="who">${TYPES[it.type].n} · ${esc(names(it))}</div><div class="tmeta">📆 ${parse(ds).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})}${it.time?' · '+it.time:''}${REP[it.repeat]?' · 🔁 '+REP[it.repeat]:''}</div>${it.pay>0?`<div class="tmeta">🪙 Earns ${gbp(it.pay)}</div>`:''}${it.notes?`<p class="note">${esc(it.notes)}</p>`:''}<div class="status ${dn?'ok':late?'late':''}">${dn?'✓ Done!':late?'⚠️ Not done yet, running late':'⏳ To do'}</div></div>`;
+ $('#taskBody').innerHTML=`<div class="tcard" style="--c:${it.color}"><div class="tt">${IC(it)} ${esc(it.title)}</div><div class="who">${TYPES[it.type].n} · ${esc(names(it))}</div><div class="tmeta">📆 ${parse(ds).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})}${it.time?' · '+it.time:''}${REP[it.repeat]?' · 🔁 '+REP[it.repeat]:''}</div>${it.pay>0?`<div class="tmeta">🪙 Earns ${gbp(it.pay)}</div>`:''}${it.notes?`<p class="note">${esc(it.notes)}</p>`:''}<div class="status ${dn?'ok':late?'late':''}">${dn?'✓ Done!':late?'⚠️ Not done yet, running late':'⏳ To do'}</div>${normUrl(it.url)?`<a class="btn primary big" href="${esc(normUrl(it.url))}" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;margin-top:14px;text-decoration:none">🔗 Go</a>`:''}</div>`;
  $('#tDone').textContent=dn?'↩︎ Mark not done':'✓ Mark as done';
  $('#tDone').className='btn big '+(dn?'undo':'primary');
  $('#taskDlg').showModal();
@@ -718,7 +724,7 @@ $('#todayBtn').onclick=()=>{
 };
 // add / edit
 function swR(){$('#sw').innerHTML=COLORS.map(c=>`<button style="--c:${c}" class="${c===color?'on':''}" data-c="${c}" aria-label="Color"></button>`).join('')}
-function segR(){$('#payBox').style.display=type==='chore'?'':'none';$('#seg').innerHTML=Object.entries(TYPES).map(([k,v])=>`<button class="${k===type?'on':''}" data-t="${k}">${v.i} ${v.n}</button>`).join('')}
+function segR(){$('#payBox').style.display=type==='chore'?'':'none';$('#urlBox').style.display=type==='homework'?'':'none';$('#seg').innerHTML=Object.entries(TYPES).map(([k,v])=>`<button class="${k===type?'on':''}" data-t="${k}">${v.i} ${v.n}</button>`).join('')}
 function openDlg(it,ds){
  if(it&&it.source==='apple'){toast('This comes from Apple Calendar, so change it there');return}
  editing=it;editDs=ds;type=it?it.type:'event';color=it?it.color:COLORS[S.items.length%COLORS.length];
@@ -727,7 +733,7 @@ function openDlg(it,ds){
  whoSel=it?whoOf(it).filter(x=>x!=='all'):((S.me||'all')!=='all'?[S.me]:[]);whoR();
  
  $('#date').value=it?it.date:ds;$('#time').value=it?it.time||'':'';
- $('#rep').value=it?it.repeat||'none':'none';$('#notes').value=it?it.notes||'':'';$('#pay').value=it&&it.pay?it.pay:'';
+ $('#rep').value=it?it.repeat||'none':'none';$('#notes').value=it?it.notes||'':'';$('#pay').value=it&&it.pay?it.pay:'';$('#url').value=it&&it.url?it.url:'';$('#urlErr').style.display='none';
  $('#del').style.display=it?'':'none';colorManual=!!it;if(!it&&whoSel.length)color=person(whoSel[0]).color;icon=it&&it.icon||'';iconManual=!!icon;$('#icoPick').style.display='none';$('#icoQ').value='';autoPay=false;segR();swR();preInit();$('#dlg').showModal();
 }
 const ICONS='🧹 broom sweep clean|🧽 sponge scrub wash|🧺 laundry basket clothes|👕 shirt clothes dress|🧦 socks|🪣 bucket mop|🧴 soap bottle|🚿 shower|🛁 bath|🪥 teeth brush|🍽️ plate dinner table dishes|🥣 bowl breakfast cereal|🍳 cook egg|🥕 veg vegetables|🍎 apple fruit snack|🥪 sandwich lunch packed|🧃 drink juice|🔪 kitchen chop|🫧 bubbles washing-up|🚮 bin bins rubbish trash|🗑️ bin bins rubbish trash|♻️ recycling|🪴 plant water garden|🌱 seedling garden|🌳 tree garden|✂️ cut trim|🛏️ bed make bedroom|🧸 toys tidy teddy|🎮 games|📦 box pack tidy|🧰 tools fix|🚗 car|🚲 bike|🧼 soap hands|🪟 window|🚪 door|🛒 shopping|🧻 toilet loo|💡 light|🐕 dog walk feed|🐈 cat feed litter|🐟 fish tank feed|🐹 hamster pet|🐰 rabbit pet|🐴 horse|🦜 bird|📚 books read reading|📖 book read|✏️ pencil write writing|📝 homework writing notes|🖊️ pen write|🔢 numbers maths math times tables|➕ add maths sums|📐 geometry ruler maths|🧮 abacus count|🔬 science experiment|🧪 science lab|🌍 geography world|🗺️ map geography|🏛️ history|🔤 spelling letters alphabet phonics|🗣️ speaking talk language|🇫🇷 french language|🇪🇸 spanish language|🎹 piano keyboard practice|🎸 guitar practice|🎻 violin practice|🥁 drums practice|🎵 music practice singing|🎨 art painting drawing|🖍️ colouring crayon drawing|💻 computer coding laptop|⌨️ typing|🎒 school bag backpack|🧠 brain thinking learn quiz|⏰ timer clock|⚽ football soccer sport|🏃 running exercise pe|🏊 swimming|🏉 rugby|🏏 cricket|🎾 tennis|🏀 basketball|🥋 karate|💃 dance|🧘 yoga stretch|🌟 star reward|🏆 trophy win|❤️ heart kind|📞 phone call|✉️ letter post|🎁 present gift|👶 baby sibling help|🧑‍🍳 chef cooking helping'.split('|').map(x=>{const[e,...k]=x.split(' ');return{e,k:k.join(' ')}});
@@ -777,7 +783,9 @@ $('#sw').onclick=e=>{const b=e.target.closest('[data-c]');if(b){color=b.dataset.
 $('#new').onclick=()=>openDlg(null,view==='day'?ymd(cur):(sel||ymd(new Date())));
 $('#save').onclick=()=>{
  const title=$('#title').value.trim();if(!title){if(type!=='event'&&preSel!=='own'){$('#preHint').style.display='';$('#pre').scrollIntoView({block:'center'})}else $('#title').focus();return}
- const o={title,type,color,who:whoSel.length?[...whoSel]:['all'],date:$('#date').value||ymd(new Date()),time:$('#time').value,repeat:$('#rep').value,notes:$('#notes').value,pay:type==='chore'?Math.max(0,parseFloat($('#pay').value)||0):0,icon:type==='event'?'':icon};
+ const rawUrl=$('#url').value.trim(),goUrl=type==='homework'?normUrl(rawUrl):'';
+ if(type==='homework'&&rawUrl&&!goUrl){$('#urlErr').style.display='';$('#url').focus();return}
+ const o={title,type,color,who:whoSel.length?[...whoSel]:['all'],date:$('#date').value||ymd(new Date()),time:$('#time').value,repeat:$('#rep').value,notes:$('#notes').value,pay:type==='chore'?Math.max(0,parseFloat($('#pay').value)||0):0,url:goUrl,icon:type==='event'?'':icon};
  if(editing)Object.assign(editing,o);else S.items.push({id:'i'+Date.now()+Math.random().toString(36).slice(2,5),...o});
  save();$('#dlg').close();render();
 };
@@ -1053,7 +1061,7 @@ function putSnap(sn){try{localStorage.setItem(SNAPKEY,JSON.stringify(sn))}catch(
 function cloudRows(){
  const people={},items={},done={},payouts={},kv={};
  S.people.forEach(p=>{people[p.id]={id:p.id,name:p.name,color:p.color}});
- S.items.forEach(it=>{items[it.id]={id:it.id,title:it.title,type:it.type,who:whoOf(it),date:it.date,time:it.time||'',repeat:it.repeat||'none',notes:it.notes||'',color:it.color||'#7c5cff',pay:Math.round((+it.pay||0)*100)/100,skip:(it.skip||[]).slice().sort(),until:it.until||null,source:it.source||'app',icon:it.icon||''}});
+ S.items.forEach(it=>{items[it.id]={id:it.id,title:it.title,type:it.type,who:whoOf(it),date:it.date,time:it.time||'',repeat:it.repeat||'none',notes:it.notes||'',color:it.color||'#7c5cff',pay:Math.round((+it.pay||0)*100)/100,skip:(it.skip||[]).slice().sort(),until:it.until||null,source:it.source||'app',icon:it.icon||'',url:it.url||''}});
  Object.keys(S.done||{}).forEach(k=>{
   if(!S.done[k])return;const i=k.indexOf('|'),id=k.slice(0,i),day=k.slice(i+1);
   if(items[id])done[k]={item_id:id,day,done_at:new Date((S.doneAt&&S.doneAt[k])||Date.parse(day)).toISOString()};
@@ -1119,6 +1127,7 @@ async function cloudPull(){
   if(r.skip&&r.skip.length)o.skip=r.skip;
   if(r.until)o.until=r.until;
   if(r.icon)o.icon=r.icon;
+  if(r.url)o.url=r.url;
   if(r.source&&r.source!=='app')o.source=r.source;
   return o;
  });

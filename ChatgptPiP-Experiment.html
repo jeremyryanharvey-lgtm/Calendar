@@ -26,18 +26,18 @@ button{width:100%;padding:14px;border:0;border-radius:10px;background:#2764c5;co
 <li>Rename it <strong>ChatgptPiP</strong>.</li>
 <li>Replace its address with the code below, then save.</li>
 </ol>
-<textarea id="code" readonly>javascript:(()=>{const s=document.createElement('script');s.src='https://jeremyryanharvey-lgtm.github.io/Calendar/chatgpt-pip.js?v=1';document.head.appendChild(s)})()</textarea>
+<textarea id="code" readonly>javascript:(()=>{const s=document.createElement('script');s.src='https://jeremyryanharvey-lgtm.github.io/Calendar/chatgpt-pip.js?v=2';document.head.appendChild(s)})()</textarea>
 <button id="copy">Copy bookmarklet code</button>
 <p class="note">If Safari removes the “javascript:” part when saving, edit the bookmark again and add it back at the start. Safari may restrict bookmarklet execution depending on its version and settings.</p>
 <h2>2. Run it on ChatGPT</h2>
 <ol>
 <li>Open your ChatGPT conversation in its Safari tab.</li>
-<li>Open the bookmarks menu and tap <strong>ChatgptPiP</strong>.</li>
-<li>If Safari asks for permission, allow the script/video action. The generated preview should attempt to enter PiP.</li>
+<li>Open the bookmarks menu and tap <strong>ChatgptPiP</strong>. A blue <strong>Start ChatgptPiP</strong> button should appear near the top-right of the ChatGPT page.</li>
+<li>Tap the blue <strong>Start ChatgptPiP</strong> button. This second tap is important because iPhone Safari requires a direct user gesture to start video PiP.</li>
 <li>Keep the ChatGPT tab open. New or changed message text should update the PiP view.</li>
 </ol>
 <h2>3. Stop it</h2>
-<p>Run the same bookmarklet again to stop the preview, or close/reload the ChatGPT tab.</p>
+<p>Tap the blue <strong>PiP started · tap to stop</strong> button again to stop the preview, or close/reload the ChatGPT tab. If the button never appears after running the bookmarklet, the bookmarklet did not execute.</p>
 <p class="note"><strong>Known limitations:</strong> this is a text-and-layout approximation, not an exact screenshot. It may miss messages if ChatGPT changes its page structure, and iOS Safari may block bookmarklet-triggered video PiP. It is an experiment, not a guaranteed iPhone feature.</p>
 </main>
 <script>

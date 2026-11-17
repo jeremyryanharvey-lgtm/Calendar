@@ -118,6 +118,15 @@ input,select,textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12
 .whos button{display:flex;align-items:center;gap:6px;justify-content:flex-start;padding:8px 14px;border-radius:999px;background:var(--bg);border:3px solid transparent}
 .whos button.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 18%,var(--card))}
 #meList{flex-direction:column;align-items:stretch}
+#appr{grid-column:3;grid-row:2;justify-self:center;font-weight:900;background:#ffb347;color:#3a2a00}
+.ck.pend{background:#ffb347;border-color:#ffb347;color:#3a2a00;font-size:13px}
+.chip.pend{border-style:dashed;background:color-mix(in srgb,#ffb347 25%,var(--card))}
+#webDlg{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;padding:0;border-radius:0;background:var(--bg);overflow:hidden}
+#webDlg[open]{display:flex;flex-direction:column;animation:none}
+.wbar{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px 8px;background:var(--bg)}
+.wbar button,.wbar a{width:44px;height:44px;border-radius:50%;background:var(--card);box-shadow:var(--shadow);border:0;display:grid;place-items:center;font-size:20px;color:inherit;text-decoration:none;flex:none}
+#wTitle{flex:1;text-align:center;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#wFrame{flex:1;width:100%;border:0;background:#fff}
 .pig{grid-column:4;grid-row:2;justify-self:center;width:46px;height:46px;padding:0;border-radius:50%;display:none;place-items:center}
 .pig .pgi{width:30px;height:30px}
 .pgi{width:1.15em;height:1.15em;vertical-align:-.2em}
@@ -203,6 +212,7 @@ html,body{overflow-x:hidden}
 <h1>Our Family</h1>
 <button class="btn pig" id="pig" aria-label="My piggy bank"><svg class="pgi" viewBox="0 0 64 64" aria-hidden="true"><use href="#pgb"/></svg></button>
 <button class="btn rem ok" id="rem">✓</button>
+<button class="btn" id="appr" style="display:none">✋ <b>0</b></button>
 
 
 <button class="me" id="me" aria-label="Who are you?">👥</button>
@@ -224,7 +234,7 @@ html,body{overflow-x:hidden}
 <label>Date</label><input type="date" id="date"><label>Time (optional)</label><input type="time" id="time">
 <div id="payBox"><label>Reward in £ (chores only)</label><input type="number" id="pay" min="0" step="0.05" inputmode="decimal" placeholder="0.00"></div>
 <label>Repeat</label>
-<select id="rep"><option value="none">Never</option><option value="daily">Every day</option><option value="weekdays">School days (Mon–Fri)</option><option value="weekly">Every week</option></select>
+<select id="rep"><option value="none">Never</option><option value="daily">Every day</option><option value="weekdays">School days (Mon–Fri)</option><option value="weekly">Every week</option><option value="biweekly">Every other week</option></select>
 <label>Color dot</label><div class="sw" id="sw"></div>
 <div id="urlBox"><label>Homework link (optional)</label><input id="url" type="url" inputmode="url" placeholder="https://…" autocapitalize="off" autocorrect="off" spellcheck="false"><p class="note" id="urlErr" style="color:#e5384b;display:none;margin:4px 0 0">That link doesn’t look right. Check it and try again.</p></div>
 <label>Notes</label><textarea id="notes" rows="2"></textarea>
@@ -238,6 +248,10 @@ html,body{overflow-x:hidden}
 <dialog id="allPigDlg"><h2><svg class="pgi" viewBox="0 0 64 64" aria-hidden="true"><use href="#pgb"/></svg> All piggy banks</h2><div id="apBody"></div><div class="acts"><button class="btn primary" id="apClose">Close</button></div></dialog>
 
 <dialog id="pigDlg"><h2><svg class="pgi" viewBox="0 0 64 64" aria-hidden="true"><use href="#pgb"/></svg> My piggy bank</h2><div id="pigBody"></div><div class="acts"><button class="btn primary" id="pigClose">Close</button></div></dialog>
+
+<dialog id="apprDlg"><h2>✋ Waiting for approval</h2><div id="apprBody"></div><div class="acts"><button class="btn" id="apprAll">Approve all</button><button class="btn primary" id="apprClose">Close</button></div></dialog>
+
+<dialog id="webDlg"><div class="wbar"><button id="wClose" aria-label="Back to the calendar">✕</button><span id="wTitle"></span><a id="wOpen" target="_blank" rel="noopener noreferrer" aria-label="Open in the browser">↗</a></div><iframe id="wFrame" title="Linked page" allow="autoplay; fullscreen"></iframe></dialog>
 
 <dialog id="meDlg"><h2>Who are you?</h2><div class="whos" id="meList"></div><p class="note">Pick your name to see just your things, plus anything for Everyone. Pick Everyone to see it all.</p></dialog>
 
@@ -256,7 +270,7 @@ html,body{overflow-x:hidden}
 </dialog>
 
 <dialog id="pinDlg"><div id="pinBox"><h2 id="pinTitle">Enter admin PIN</h2><div class="pdots" id="pinDots"></div><p class="note" id="pinMsg" style="min-height:18px"></p>
-<div class="pads" id="pad"><button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="x" aria-label="Cancel">✕</button><button data-k="0">0</button><button data-k="b" aria-label="Delete">⌫</button></div></div></dialog>
+<div class="pads" id="pad"><button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="x" aria-label="Cancel">✕</button><button data-k="0">0</button><button data-k="b" aria-label="Delete">⌫</button><button data-k="ok" style="grid-column:1/-1;background:#7c5cff;color:#fff;border-color:#7c5cff">OK</button></div></div></dialog>
 
 <dialog id="delDlg"><h2>Delete repeating item</h2><p class="note" id="delWhen" style="margin:0 0 12px"></p><div class="seg"><button id="delOne">Just this day</button><button id="delFuture">This and all future days</button><button id="delAll">All days, even past ones</button></div><div class="acts"><button class="btn" id="delCancel">Cancel</button></div></dialog>
 
@@ -321,6 +335,7 @@ try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r)}catch(e){}
 const FRESH=!S;
 if(FRESH)S={people:[{id:'all',name:'Everyone',color:COLORS[0]}],items:[],done:{},doneAt:{},payouts:[],demoV:1,setupDone:false};
 else if(S.setupDone===undefined)S.setupDone=true;
+if(!S.pend)S.pend={};
 const DEFPRE=()=>({chore:[['Feed the dog',.2],['Make bed',.2],['Set the table',.3],['Empty the dishwasher',.3],['Tidy bedroom',.2],['Take out the bins',1],['Tidy the playroom',2],['Wash the car',3],['Water the plants',.2],['Hoover']].map(([t,pay])=>({t,pay:pay||0})),homework:['Maths worksheet','Spelling practice','Read for 20 minutes','Times tables','Writing practice','Science project','Piano practice'].map(t=>({t,pay:0}))});
 if(!S.presets)S.presets=DEFPRE();
 const save=()=>{S.doneAt=S.doneAt||{};for(const k in S.done)if(!S.doneAt[k])S.doneAt[k]=Date.now();for(const k in S.doneAt)if(!S.done[k])delete S.doneAt[k];
@@ -329,7 +344,7 @@ const save=()=>{S.doneAt=S.doneAt||{};for(const k in S.done)if(!S.doneAt[k])S.do
  if(typeof cloudDirty==='function')cloudDirty();
  const cj=coreJS();if(cj!==prevCore){if(prevCore){undoStack.push(prevCore);if(undoStack.length>25)undoStack.shift();toast(undoLabel(JSON.parse(prevCore)))}prevCore=cj}
 };
-const CORE=['items','done','doneAt','payouts','people','goals','presets'],undoStack=[];let prevCore='',tT;
+const CORE=['items','done','doneAt','payouts','people','goals','presets','pend'],undoStack=[];let prevCore='',tT;
 const coreJS=()=>JSON.stringify(CORE.map(k=>S[k]));
 prevCore=coreJS();
 function undoLabel(p){
@@ -352,6 +367,7 @@ function occurs(it,ds){
  if(it.repeat==='daily')return true;
  if(it.repeat==='weekdays')return g>0&&g<6;
  if(it.repeat==='weekly')return parse(it.date).getDay()===g;
+ if(it.repeat==='biweekly')return parse(it.date).getDay()===g&&Math.round((parse(ds)-parse(it.date))/864e5)%14===0;
  return false;
 }
 const byTime=(a,b)=>(a.time||'')<(b.time||'')?-1:(a.time||'')>(b.time||'')?1:0;
@@ -359,7 +375,7 @@ function render(anim){
  ['Day','Week','Month'].forEach(n=>$('#v'+n).className=view===n.toLowerCase()?'on':'');
  $('.views').classList.toggle('week',view==='week');$('.views').classList.toggle('month',view==='month');
  view==='month'?renderMonth():view==='week'?renderWeek():renderDay();
- updRem();meR();pigR();
+ updRem();meR();pigR();updAppr();
  fx(anim);
 }
 function renderWeek(){
@@ -381,8 +397,8 @@ function renderWeek(){
   const t=g.it,p=person(t.who),tk=t.type!=='event',o0=g.occ.find(o=>!S.done[o.id+'|'+o.ds])||g.occ[0];
   const nd=g.occ.filter(o=>S.done[o.id+'|'+o.ds]).length;
   const chips=g.occ.map(o=>{
-   const dn=!!S.done[o.id+'|'+o.ds];
-   return `<button class="chip ${dn?'on':''} ${o.ds===sel?'sel':''} ${!dn&&tk&&o.ds<today?'late':''}" ${tk?`data-ck="${o.id}|${o.ds}"`:`data-ed="${o.id}|${o.ds}"`}>${D[o.i]}${dn?' ✓':''}${t.time&&!tk?' · '+t.time:''}</button>`}).join('');
+   const dn=!!S.done[o.id+'|'+o.ds],pn=!!(S.pend&&S.pend[o.id+'|'+o.ds]);
+   return `<button class="chip ${dn?'on':pn?'pend':''} ${o.ds===sel?'sel':''} ${!dn&&!pn&&tk&&o.ds<today?'late':''}" ${tk?`data-ck="${o.id}|${o.ds}"`:`data-ed="${o.id}|${o.ds}"`}>${D[o.i]}${dn?' ✓':pn?' ⏳':''}${t.time&&!tk?' · '+t.time:''}</button>`}).join('');
   return `<div class="grp" style="--c:${t.color}"><div class="gh"><span class="dot big"></span><button class="gt" data-ed="${o0.id}|${o0.ds}">${IC(t)} ${esc(t.title)}${t.pay>0?` <span class="pay">${gbp(t.pay)}</span>`:''}</button><span class="who">${esc(names(t))}</span>${tk?`<span class="prog">${nd}/${g.occ.length} done</span>`:''}</div><div class="days">${chips}</div></div>`}).join('');
  let head=sel?parse(sel).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'}):'This week’s list';
  $('#main').innerHTML=`<div class="strip">${strip}</div><div class="sec"><span>${head}</span></div>${html||'<div class="empty">Nothing planned 🎈</div>'}`;
@@ -405,8 +421,8 @@ function renderDay(){
  const ds=ymd(cur),list=S.items.filter(it=>occurs(it,ds)&&mine(it)).sort(byTime);
  $('#range').textContent=cur.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'});
  $('#main').innerHTML=list.map(it=>{
-  const p=person(it.who),dn=!!S.done[it.id+'|'+ds],tk=it.type!=='event';
-  return `<div class="row ${dn?'done':''}" style="--c:${it.color}">${tk?`<button class="ck ${dn?'on':''}" data-ck="${it.id}|${ds}" aria-label="Mark done">${dn?'✓':''}</button>`:'<span class="dot big"></span>'}<div style="flex:1;min-width:0"><button class="gt" style="width:100%" data-ed="${it.id}|${ds}">${IC(it)} ${esc(it.title)}${it.pay>0?` <span class="pay">${gbp(it.pay)}</span>`:''}</button><div class="who">${esc(names(it))}</div></div><span class="tm">${it.time||'All day'}</span></div>`}).join('')||'<div class="empty">Nothing planned today 🎈</div>';
+  const p=person(it.who),dn=!!S.done[it.id+'|'+ds],pn=!!(S.pend&&S.pend[it.id+'|'+ds]),tk=it.type!=='event';
+  return `<div class="row ${dn?'done':''}" style="--c:${it.color}">${tk?`<button class="ck ${dn?'on':pn?'pend':''}" data-ck="${it.id}|${ds}" aria-label="Mark done">${dn?'✓':pn?'⏳':''}</button>`:'<span class="dot big"></span>'}<div style="flex:1;min-width:0"><button class="gt" style="width:100%" data-ed="${it.id}|${ds}">${IC(it)} ${esc(it.title)}${it.pay>0?` <span class="pay">${gbp(it.pay)}</span>`:''}</button><div class="who">${esc(names(it))}${pn?' · ⏳ waiting for approval':''}</div></div><span class="tm">${it.time||'All day'}</span></div>`}).join('')||'<div class="empty">Nothing planned today 🎈</div>';
 }
 const calm=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 function fx(anim){
@@ -431,7 +447,7 @@ function burst(el){
 function pending(){
  const out=[],today=ymd(new Date()),t0=new Date();t0.setHours(0,0,0,0);
  for(let i=14;i>=0;i--){const ds=ymd(addDays(t0,-i));
-  S.items.forEach(it=>{if(it.type!=='event'&&occurs(it,ds)&&mine(it)&&!S.done[it.id+'|'+ds])out.push({it,ds,late:ds<today})})}
+  S.items.forEach(it=>{if(it.type!=='event'&&occurs(it,ds)&&mine(it)&&!S.done[it.id+'|'+ds]&&!(S.pend&&S.pend[it.id+'|'+ds]))out.push({it,ds,late:ds<today})})}
  return out;
 }
 function dayLbl(ds){
@@ -455,14 +471,61 @@ $('#remClose').onclick=()=>$('#remDlg').close();
 $('#remBody').onclick=e=>{
  const d=e.target.closest('[data-rd]'),r=e.target.closest('[data-rt]');
  if(d){
-  S.done[d.dataset.rd]=true;save();d.classList.add('on','pop');d.textContent='✓';burst(d);
+  const tr=tickToggle(d.dataset.rd);if(tr===null)return;d.classList.add('on','pop');d.textContent=tr==='pending'?'⏳':'✓';if(tr==='done')burst(d);
   d.closest('.rr').animate([{opacity:1,transform:'none'},{opacity:0,transform:'scale(.92)'}],{duration:350,delay:350,fill:'forwards'});
   setTimeout(()=>{remR();render()},700);
  }else if(r){const[id,ds]=r.dataset.rt.split('|');$('#remDlg').close();openTask(S.items.find(i=>i.id===id),ds)}
 };
 // chore / homework sheet: mark done or edit
 let tk=null;
-const REP={daily:'Every day',weekdays:'School days',weekly:'Every week'};
+const REP={daily:'Every day',weekdays:'School days',weekly:'Every week',biweekly:'Every other week'};
+// ---- approvals ----
+const roleOf=id=>{const p=S.people.find(x=>x.id===id);return (p&&p.role)||'parent'};
+const meChild=()=>{const m=S.me||'all';return m!=='all'&&roleOf(m)==='child'};
+function tickToggle(k){
+ S.pend=S.pend||{};
+ const done=!!S.done[k],pend=!!S.pend[k],child=meChild();
+ if(done){if(child){toast('Ask a grown-up if this needs changing');return null}delete S.done[k];save();return 'off'}
+ if(pend){
+  if(child){delete S.pend[k];save();return 'off'}
+  delete S.pend[k];S.done[k]=true;save();return 'done';
+ }
+ if(child){S.pend[k]={t:Date.now(),by:S.me};save();return 'pending'}
+ S.done[k]=true;save();return 'done';
+}
+function approvals(){
+ return Object.keys(S.pend||{}).map(k=>{const i=k.indexOf('|'),id=k.slice(0,i),ds=k.slice(i+1),it=S.items.find(x=>x.id===id);return it?{k,it,ds,p:S.pend[k]}:null}).filter(Boolean).sort((a,b)=>(a.p.t||0)-(b.p.t||0));
+}
+function updAppr(){
+ const b=$('#appr');if(!b)return;
+ const n=meChild()?0:approvals().length;
+ b.style.display=n?'':'none';b.innerHTML='\u270b <b>'+n+'</b>';
+}
+function apprR(){
+ const L=approvals();
+ $('#apprBody').innerHTML=L.length?L.map(x=>{const who=x.p.by&&S.people.some(q=>q.id===x.p.by)?person(x.p.by).name:names(x.it);return `<div class="rr" style="--c:${x.it.color}"><span class="dot big"></span><div class="pn">${esc(x.it.title)}<small class="who" style="display:block">${esc(who)} \u00b7 ${dayLbl(x.ds)}</small></div><button class="btn" data-rj="${x.k}" aria-label="Not yet">\u2715</button><button class="btn primary" data-ap="${x.k}" aria-label="Approve">\u2713</button></div>`}).join(''):'<p class="note">Nothing is waiting.</p>';
+ $('#apprAll').style.display=L.length?'':'none';
+}
+$('#appr').onclick=()=>{apprR();$('#apprDlg').showModal()};
+$('#apprClose').onclick=()=>$('#apprDlg').close();
+$('#apprBody').onclick=e=>{
+ const a=e.target.closest('[data-ap]'),r=e.target.closest('[data-rj]');
+ if(a){S.done[a.dataset.ap]=true;delete S.pend[a.dataset.ap]}else if(r){delete S.pend[r.dataset.rj]}else return;
+ save();apprR();render();if(!approvals().length)$('#apprDlg').close();
+};
+$('#apprAll').onclick=()=>{approvals().forEach(x=>{S.done[x.k]=true;delete S.pend[x.k]});save();apprR();render();$('#apprDlg').close()};
+$('#plist').addEventListener('click',e=>{
+ const b=e.target.closest('[data-role]');if(!b)return;
+ const p=S.people.find(x=>x.id===b.dataset.role);
+ if(p){p.role=roleOf(p.id)==='child'?'parent':'child';save();famR();render()}
+});
+// ---- end approvals ----
+// open links to your own pages (GitHub Pages) inside the app, with a close button back to the calendar
+const inApp=u=>{try{const x=new URL(u);return x.origin===location.origin||/\.github\.io$/i.test(x.hostname)}catch(e){return false}};
+function openWeb(u){$('#wFrame').src=u;$('#wTitle').textContent=new URL(u).hostname.replace(/^www\./,'');$('#wOpen').href=u;if(!$('#webDlg').open)$('#webDlg').showModal()}
+$('#wClose').onclick=()=>$('#webDlg').close();
+$('#webDlg').addEventListener('close',()=>{$('#wFrame').src='about:blank'});
+document.addEventListener('click',e=>{const a=e.target.closest('a[data-go]');if(!a)return;const u=a.getAttribute('href');if(inApp(u)){e.preventDefault();$('#taskDlg').close();openWeb(u)}});
 function normUrl(v){
  v=String(v||'').trim();if(!v)return '';
  if(!/^https?:\/\//i.test(v))v='https://'+v;
@@ -470,19 +533,21 @@ function normUrl(v){
 }
 function openTask(it,ds){
  if(!it)return;
- tk={it,ds};const p=person(it.who),dn=!!S.done[it.id+'|'+ds],late=!dn&&ds<ymd(new Date());
- $('#taskBody').innerHTML=`<div class="tcard" style="--c:${it.color}"><div class="tt">${IC(it)} ${esc(it.title)}</div><div class="who">${TYPES[it.type].n} · ${esc(names(it))}</div><div class="tmeta">📆 ${parse(ds).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})}${it.time?' · '+it.time:''}${REP[it.repeat]?' · 🔁 '+REP[it.repeat]:''}</div>${it.pay>0?`<div class="tmeta">🪙 Earns ${gbp(it.pay)}</div>`:''}${it.notes?`<p class="note">${esc(it.notes)}</p>`:''}<div class="status ${dn?'ok':late?'late':''}">${dn?'✓ Done!':late?'⚠️ Not done yet, running late':'⏳ To do'}</div>${normUrl(it.url)?`<a class="btn primary big" href="${esc(normUrl(it.url))}" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;margin-top:14px;text-decoration:none">🔗 Go</a>`:''}</div>`;
- $('#tDone').textContent=dn?'↩︎ Mark not done':'✓ Mark as done';
+ tk={it,ds};const p=person(it.who),dn=!!S.done[it.id+'|'+ds],pn=!!(S.pend&&S.pend[it.id+'|'+ds]),late=!dn&&!pn&&ds<ymd(new Date());
+ $('#taskBody').innerHTML=`<div class="tcard" style="--c:${it.color}"><div class="tt">${IC(it)} ${esc(it.title)}</div><div class="who">${TYPES[it.type].n} · ${esc(names(it))}</div><div class="tmeta">📆 ${parse(ds).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})}${it.time?' · '+it.time:''}${REP[it.repeat]?' · 🔁 '+REP[it.repeat]:''}</div>${it.pay>0?`<div class="tmeta">🪙 Earns ${gbp(it.pay)}</div>`:''}${it.notes?`<p class="note">${esc(it.notes)}</p>`:''}<div class="status ${dn?'ok':late?'late':''}">${dn?'✓ Done!':pn?'⏳ Waiting for approval':late?'⚠️ Not done yet, running late':'⏳ To do'}</div>${normUrl(it.url)?`<a class="btn primary big" data-go="1" href="${esc(normUrl(it.url))}" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;margin-top:14px;text-decoration:none">🔗 Go</a>`:''}</div>`;
+ $('#tDone').style.display=dn&&meChild()?'none':'';
+ $('#tDone').textContent=dn?'↩︎ Mark not done':pn?(meChild()?'↩︎ Cancel request':'✓ Approve'):(meChild()?'✓ Done, ask for approval':'✓ Mark as done');
  $('#tDone').className='btn big '+(dn?'undo':'primary');
  $('#taskDlg').showModal();
 }
 $('#tClose').onclick=()=>$('#taskDlg').close();
 $('#tEdit').onclick=()=>{$('#taskDlg').close();openDlg(tk.it,tk.ds)};
 $('#tDone').onclick=()=>{
- const k=tk.it.id+'|'+tk.ds,on=!S.done[k];
- if(on)S.done[k]=true;else delete S.done[k];
- save();$('#taskDlg').close();render();
- if(on){const el=document.querySelector('[data-ck="'+k+'"]');if(el){el.classList.add('pop');burst(el)}}
+ const k=tk.it.id+'|'+tk.ds;
+ $('#taskDlg').close();
+ const r=tickToggle(k);if(r===null)return;
+ render();
+ if(r==='done'||r==='pending'){const el=document.querySelector('[data-ck="'+k+'"]');if(el){el.classList.add('pop');if(r==='done')burst(el)}}
 };
 // piggy bank: money earned from paid chores
 const gbp=n=>'£'+(Math.round(n*100)/100).toFixed(2);
@@ -582,9 +647,10 @@ const names=it=>whoOf(it).map(id=>person(id).name).join(', ');
 const mine=it=>{const m=S.me||'all';if(m==='all')return true;const w=whoOf(it);return w.includes('all')||w.includes(m)};
 let whoSel=[];
 function whoR(){
+ if(meChild()){const p=person(S.me);$('#whos').innerHTML=`<button class="on" style="--c:${p.color}" disabled><span class="dot"></span>${esc(p.name)}</button><span class="note" style="width:100%;margin:0">Kids can only add things for themselves.</span>`;return}
  $('#whos').innerHTML=S.people.filter(p=>p.id!=='all').map(p=>`<button data-w="${p.id}" style="--c:${p.color}" class="${whoSel.includes(p.id)?'on':''}"><span class="dot"></span>${esc(p.name)}</button>`).join('')+'<span class="note" style="width:100%;margin:0">None picked means Everyone.</span>';
 }
-$('#whos').onclick=e=>{const b=e.target.closest('[data-w]');if(!b)return;const id=b.dataset.w;whoSel=whoSel.includes(id)?whoSel.filter(x=>x!==id):[...whoSel,id];whoR()};
+$('#whos').onclick=e=>{if(meChild())return;const b=e.target.closest('[data-w]');if(!b)return;const id=b.dataset.w;whoSel=whoSel.includes(id)?whoSel.filter(x=>x!==id):[...whoSel,id];whoR()};
 function meR(){
  const m=S.me||'all',p=person(m),all=m==='all',b=$('#me');
  b.style.setProperty('--c',all?'var(--card)':p.color);
@@ -606,8 +672,8 @@ let pinBuf='',pinMode='unlock',pinNew='';
 const pinOf=()=>S.pin||'1234';
 function pinOpen(mode){pinMode=mode;pinBuf='';pinNew='';$('#pinMsg').textContent='';pinR();$('#pinDlg').showModal()}
 function pinR(){
- $('#pinTitle').textContent={unlock:'Enter admin PIN',set1:'Choose a new PIN',set2:'Type it again',wipe:'Enter PIN to delete everything',who:'Enter PIN to switch person'}[pinMode];
- $('#pinDots').innerHTML=[0,1,2,3].map(i=>`<span class="pd ${i<pinBuf.length?'on':''}"></span>`).join('');
+ $('#pinTitle').textContent={unlock:'Enter admin PIN',set1:'Choose a new PIN (4 to 8 digits)',set2:'Type it again',wipe:'Enter PIN to delete everything',who:'Enter PIN to switch person'}[pinMode];
+ $('#pinDots').innerHTML=Array.from({length:Math.max(4,pinBuf.length)},(_,i)=>`<span class="pd ${i<pinBuf.length?'on':''}"></span>`).join('');
 }
 function shake(msg){
  $('#pinMsg').textContent=msg;
@@ -616,9 +682,11 @@ function shake(msg){
 function press(k){
  if(k==='x'){$('#pinDlg').close();return}
  if(k==='b'){pinBuf=pinBuf.slice(0,-1);pinR();return}
- if(pinBuf.length>=4)return;
+ if(k==='ok'){if(pinBuf.length<4){shake('Use at least 4 digits');return}pinDone();return}
+ if(pinBuf.length>=8)return;
  pinBuf+=k;$('#pinMsg').textContent='';pinR();
- if(pinBuf.length===4)setTimeout(pinDone,160);
+ const auto=['unlock','who','wipe'].includes(pinMode)?pinOf().length:pinMode==='set2'?pinNew.length:0;
+ if(auto&&pinBuf.length===auto)setTimeout(pinDone,160);
 }
 function pinDone(){
  const v=pinBuf;pinBuf='';
@@ -636,7 +704,7 @@ function pinDone(){
  else{pinMode='set1';pinNew='';pinR();shake('PINs did not match, start again')}
 }
 $('#pad').onclick=e=>{const b=e.target.closest('[data-k]');if(b)press(b.dataset.k)};
-$('#pinDlg').addEventListener('keydown',e=>{if(/^\d$/.test(e.key))press(e.key);else if(e.key==='Backspace')press('b')});
+$('#pinDlg').addEventListener('keydown',e=>{if(/^\d$/.test(e.key))press(e.key);else if(e.key==='Backspace')press('b');else if(e.key==='Enter')press('ok')});
 $('#home').onclick=()=>pinOpen('unlock');
 $('#chgPin').onclick=()=>pinOpen('set1');
 $('#setClose').onclick=()=>$('#setDlg').close();
@@ -706,7 +774,7 @@ document.addEventListener('click',e=>{
  const t=e.target.closest('[data-sd],[data-ck],[data-ed],[data-open]');if(!t)return;
  if(t.dataset.sd){const ds=t.dataset.sd;if((view==='month'||view==='week')&&sel===ds){zoomDay(t,ds);return}sel=sel===ds?null:ds;render('sel')}
  else if(t.dataset.open){cur=parse(t.dataset.open);view='day';render('view')}
- else if(t.dataset.ck){const k=t.dataset.ck,on=!S.done[k];if(on)S.done[k]=true;else delete S.done[k];save();render();if(on){const el=document.querySelector('[data-ck="'+k+'"]');if(el){el.classList.add('pop');burst(el)}}}
+ else if(t.dataset.ck){const k=t.dataset.ck,r=tickToggle(k);if(r===null)return;render();if(r==='done'||r==='pending'){const el=document.querySelector('[data-ck="'+k+'"]');if(el){el.classList.add('pop');if(r==='done')burst(el)}}}
  else if(t.dataset.ed){const[id,ds]=t.dataset.ed.split('|'),it=S.items.find(i=>i.id===id);if(it)it.type==='event'?openDlg(it,ds):openTask(it,ds)}
 });
 $('#vWeek').onclick=()=>{view='week';render('view')};
@@ -727,6 +795,7 @@ function swR(){$('#sw').innerHTML=COLORS.map(c=>`<button style="--c:${c}" class=
 function segR(){$('#payBox').style.display=type==='chore'?'':'none';$('#urlBox').style.display=type==='homework'?'':'none';$('#seg').innerHTML=Object.entries(TYPES).map(([k,v])=>`<button class="${k===type?'on':''}" data-t="${k}">${v.i} ${v.n}</button>`).join('')}
 function openDlg(it,ds){
  if(it&&it.source==='apple'){toast('This comes from Apple Calendar, so change it there');return}
+ if(it&&meChild()&&it.createdBy!==S.me){toast('Only a grown-up can change this. You can change things you added yourself.');return}
  editing=it;editDs=ds;type=it?it.type:'event';color=it?it.color:COLORS[S.items.length%COLORS.length];
  $('#dt').textContent=it?'Edit':'Add something';
  $('#title').value=it?it.title:'';
@@ -785,8 +854,8 @@ $('#save').onclick=()=>{
  const title=$('#title').value.trim();if(!title){if(type!=='event'&&preSel!=='own'){$('#preHint').style.display='';$('#pre').scrollIntoView({block:'center'})}else $('#title').focus();return}
  const rawUrl=$('#url').value.trim(),goUrl=type==='homework'?normUrl(rawUrl):'';
  if(type==='homework'&&rawUrl&&!goUrl){$('#urlErr').style.display='';$('#url').focus();return}
- const o={title,type,color,who:whoSel.length?[...whoSel]:['all'],date:$('#date').value||ymd(new Date()),time:$('#time').value,repeat:$('#rep').value,notes:$('#notes').value,pay:type==='chore'?Math.max(0,parseFloat($('#pay').value)||0):0,url:goUrl,icon:type==='event'?'':icon};
- if(editing)Object.assign(editing,o);else S.items.push({id:'i'+Date.now()+Math.random().toString(36).slice(2,5),...o});
+ const o={title,type,color,who:meChild()?[S.me]:(whoSel.length?[...whoSel]:['all']),date:$('#date').value||ymd(new Date()),time:$('#time').value,repeat:$('#rep').value,notes:$('#notes').value,pay:type==='chore'?Math.max(0,parseFloat($('#pay').value)||0):0,url:goUrl,icon:type==='event'?'':icon};
+ if(editing)Object.assign(editing,o);else S.items.push({id:'i'+Date.now()+Math.random().toString(36).slice(2,5),...o,createdBy:S.me||'all'});
  save();$('#dlg').close();render();
 };
 $('#del').onclick=()=>{
@@ -813,7 +882,7 @@ $('#delCancel').onclick=()=>$('#delDlg').close();
 $('#cancel').onclick=()=>$('#dlg').close();
 // family
 let cpSel=null;
-function famR(){$('#plist').innerHTML=S.people.map(p=>`<div class="pl"><button class="dot big cdot" data-cp="${p.id}" style="--c:${p.color}" aria-label="Change colour"></button><span>${esc(p.name)}</span>${p.id!=='all'?`<button class="btn" data-rm="${p.id}">✕</button>`:''}</div>${cpSel===p.id?`<div class="sw" style="margin:2px 0 8px">${COLORS.map(c=>`<button style="--c:${c}" class="${c===p.color?'on':''}" data-pc="${c}"></button>`).join('')}</div>`:''}`).join('')+'<p class="note">Tap a colour dot to change it.</p>'}
+function famR(){$('#plist').innerHTML=S.people.map(p=>`<div class="pl"><button class="dot big cdot" data-cp="${p.id}" style="--c:${p.color}" aria-label="Change colour"></button><span>${esc(p.name)}</span>${p.id!=='all'?`<button class="btn" data-role="${p.id}">${roleOf(p.id)==='child'?'🧒 Child':'🧑 Parent'}</button><button class="btn" data-rm="${p.id}">✕</button>`:''}</div>${cpSel===p.id?`<div class="sw" style="margin:2px 0 8px">${COLORS.map(c=>`<button style="--c:${c}" class="${c===p.color?'on':''}" data-pc="${c}"></button>`).join('')}</div>`:''}`).join('')+'<p class="note">Tap a colour dot to change it.</p>'}
 $('#fam').onclick=()=>{famR();$('#famDlg').showModal()};
 $('#plist').onclick=e=>{const b=e.target.closest('[data-rm]');if(b){S.people=S.people.filter(p=>p.id!==b.dataset.rm);S.items.forEach(i=>{const w=whoOf(i).filter(x=>x!==b.dataset.rm);i.who=w.length?w:['all']});if(S.me===b.dataset.rm)S.me='all';save();famR();render()}};
 $('#padd').onclick=()=>{const n=$('#pname').value.trim();if(!n)return;S.people.push({id:'p'+Date.now(),name:n,color:COLORS[S.people.length%COLORS.length]});$('#pname').value='';save();famR()};
@@ -942,7 +1011,7 @@ function setupR(){
  let h='';
  if(setupStep===1)h=`<h2>Welcome \ud83d\udc4b</h2><p class="note">Let\u2019s set up your family calendar. It takes a minute.</p><label>What\u2019s your family called?</label><input id="sName" maxlength="30" value="${esc(setupFam)}" placeholder="Our Family"><div class="acts"><button class="btn primary" id="sNext">Next</button></div><button class="btn wide" id="sSignin" style="margin-top:12px">I already have a family. Sign in instead</button>`;
  else if(setupStep===2)h=`<h2>Who\u2019s in the family?</h2><p class="note">Add each person who will have chores, homework or events.</p><div class="two"><input id="sPerson" maxlength="20" placeholder="Name"><button class="btn primary" id="sAdd" style="flex:none">Add</button></div><div class="whos" style="margin-top:10px">${setupNames.map((n,i)=>`<button data-sr="${i}" style="--c:${COLORS[(i+1)%COLORS.length]}" class="on"><span class="dot"></span>${esc(n)} \u2715</button>`).join('')}</div><div class="acts"><button class="btn" id="sBack">Back</button><button class="btn primary" id="sNext">Next</button></div>`;
- else if(setupStep===3)h=`<h2>Choose a PIN \ud83d\udd12</h2><p class="note">A 4-digit number for the grown-ups. It guards settings, switching person and deleting everything.</p><label>PIN</label><input id="sPin" type="password" inputmode="numeric" maxlength="4" autocomplete="off"><label>Type it again</label><input id="sPin2" type="password" inputmode="numeric" maxlength="4" autocomplete="off"><div class="acts"><button class="btn" id="sBack">Back</button><button class="btn primary" id="sNext">Next</button></div>`;
+ else if(setupStep===3)h=`<h2>Choose a PIN \ud83d\udd12</h2><p class="note">A number of 4 to 8 digits for the grown-ups. It guards settings, switching person and deleting everything.</p><label>PIN</label><input id="sPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off"><label>Type it again</label><input id="sPin2" type="password" inputmode="numeric" maxlength="8" autocomplete="off"><div class="acts"><button class="btn" id="sBack">Back</button><button class="btn primary" id="sNext">Next</button></div>`;
  else h=`<h2>How do you want to start?</h2><button class="btn primary wide" id="sEmpty" style="margin-bottom:8px">Start with an empty calendar</button><button class="btn wide" id="sDemo">Show me a sample week first</button><p class="note">You can clear the sample week any time in Settings.</p><div class="acts"><button class="btn" id="sBack">Back</button></div>`;
  $('#setupBody').innerHTML=h+(setupMsg?`<p class="note" style="color:#e5384b">${esc(setupMsg)}</p>`:'');
 }
@@ -972,7 +1041,7 @@ $('#setupBody').onclick=e=>{
  else if(id==='sNext'){
   if(setupStep===1){setupFam=$('#sName').value.trim()||'Our Family';setupStep=2}
   else if(setupStep===2){const n=$('#sPerson').value.trim();if(n&&setupNames.length<10&&!setupNames.some(x=>x.toLowerCase()===n.toLowerCase()))setupNames.push(n);setupStep=3}
-  else if(setupStep===3){const p=$('#sPin').value,q=$('#sPin2').value;if(!/^\d{4}$/.test(p))setupMsg='The PIN must be 4 digits.';else if(p!==q)setupMsg='The two PINs do not match.';else{setupPin=p;setupStep=4}}
+  else if(setupStep===3){const p=$('#sPin').value,q=$('#sPin2').value;if(!/^\d{4,8}$/.test(p))setupMsg='The PIN must be 4 to 8 digits.';else if(p!==q)setupMsg='The two PINs do not match.';else{setupPin=p;setupStep=4}}
  }
  else if(id==='sEmpty'||id==='sDemo'){finishSetup(id==='sDemo');return}
  setupR();
@@ -1060,11 +1129,15 @@ function getSnap(){try{return Object.assign(emptySnap(),JSON.parse(localStorage.
 function putSnap(sn){try{localStorage.setItem(SNAPKEY,JSON.stringify(sn))}catch(e){}}
 function cloudRows(){
  const people={},items={},done={},payouts={},kv={};
- S.people.forEach(p=>{people[p.id]={id:p.id,name:p.name,color:p.color}});
- S.items.forEach(it=>{items[it.id]={id:it.id,title:it.title,type:it.type,who:whoOf(it),date:it.date,time:it.time||'',repeat:it.repeat||'none',notes:it.notes||'',color:it.color||'#7c5cff',pay:Math.round((+it.pay||0)*100)/100,skip:(it.skip||[]).slice().sort(),until:it.until||null,source:it.source||'app',icon:it.icon||'',url:it.url||''}});
+ S.people.forEach(p=>{people[p.id]={id:p.id,name:p.name,color:p.color,role:p.role||'parent'}});
+ S.items.forEach(it=>{items[it.id]={id:it.id,title:it.title,type:it.type,who:whoOf(it),date:it.date,time:it.time||'',repeat:it.repeat||'none',notes:it.notes||'',color:it.color||'#7c5cff',pay:Math.round((+it.pay||0)*100)/100,skip:(it.skip||[]).slice().sort(),until:it.until||null,source:it.source||'app',icon:it.icon||'',url:it.url||'',created_by:it.createdBy||''}});
  Object.keys(S.done||{}).forEach(k=>{
   if(!S.done[k])return;const i=k.indexOf('|'),id=k.slice(0,i),day=k.slice(i+1);
-  if(items[id])done[k]={item_id:id,day,done_at:new Date((S.doneAt&&S.doneAt[k])||Date.parse(day)).toISOString()};
+  if(items[id])done[k]={item_id:id,day,done_at:new Date((S.doneAt&&S.doneAt[k])||Date.parse(day)).toISOString(),status:'approved',by_person:''};
+ });
+ Object.keys(S.pend||{}).forEach(k=>{
+  const i=k.indexOf('|'),id=k.slice(0,i),day=k.slice(i+1),q=S.pend[k];
+  if(items[id]&&!done[k])done[k]={item_id:id,day,done_at:new Date(q.t||0).toISOString(),status:'pending',by_person:q.by||''};
  });
  (S.payouts||[]).forEach(p=>{payouts[p.id]={id:p.id,who:p.who,amount:Math.round(p.amount*100)/100,paid_at:new Date(p.at).toISOString()}});
  if(S.goals&&Object.keys(S.goals).length)kv.goals={key:'goals',value:canon(S.goals)};
@@ -1104,7 +1177,7 @@ async function cloudPush(){
   if(del.items.length){const r=await FC.sb.from('items').delete().eq('household_id',hid).in('id',del.items);if(r.error)throw r.error}
  });
  await run('done',async()=>{
-  if(up.done.length){const r=await FC.sb.from('completions').upsert(up.done.map(k=>H(cur.done[k])),{onConflict:'household_id,item_id,day',ignoreDuplicates:true});if(r.error)throw r.error}
+  if(up.done.length){const r=await FC.sb.from('completions').upsert(up.done.map(k=>H(cur.done[k])),{onConflict:'household_id,item_id,day'});if(r.error)throw r.error}
   for(const k of del.done){const i=k.indexOf('|');const r=await FC.sb.from('completions').delete().eq('household_id',hid).eq('item_id',k.slice(0,i)).eq('day',k.slice(i+1));if(r.error)throw r.error}
  });
  await run('payouts',async()=>{
@@ -1120,7 +1193,7 @@ async function cloudPush(){
 }
 async function cloudPull(){
  const [pe,it,co,pa,kv]=await Promise.all([cloudAll('people',['id']),cloudAll('items',['id']),cloudAll('completions',['item_id','day']),cloudAll('payouts',['id']),cloudAll('household_data',['key'])]);
- const people=pe.map(r=>({id:r.id,name:r.name,color:r.color}));
+ const people=pe.map(r=>({id:r.id,name:r.name,color:r.color,role:r.role||'parent'}));
  if(!people.some(p=>p.id==='all'))people.unshift({id:'all',name:'Everyone',color:'#7c5cff'});
  const items=it.map(r=>{
   const o={id:r.id,title:r.title,type:r.type,who:r.who,date:r.date,time:r.time,repeat:r.repeat,notes:r.notes,color:r.color,pay:Number(r.pay)||0};
@@ -1128,15 +1201,16 @@ async function cloudPull(){
   if(r.until)o.until=r.until;
   if(r.icon)o.icon=r.icon;
   if(r.url)o.url=r.url;
+  if(r.created_by)o.createdBy=r.created_by;
   if(r.source&&r.source!=='app')o.source=r.source;
   return o;
  });
- const done={},doneAt={};
- co.forEach(r=>{const k=r.item_id+'|'+r.day;done[k]=true;doneAt[k]=Date.parse(r.done_at)});
+ const done={},doneAt={},pend={};
+ co.forEach(r=>{const k=r.item_id+'|'+r.day;if(r.status==='pending')pend[k]={t:Date.parse(r.done_at),by:r.by_person||''};else{done[k]=true;doneAt[k]=Date.parse(r.done_at)}});
  const payouts=pa.map(r=>({id:r.id,who:r.who,at:Date.parse(r.paid_at),amount:Number(r.amount)}));
  cloudApplying=true;
  try{
-  S.people=people;S.items=items;S.done=done;S.doneAt=doneAt;S.payouts=payouts;
+  S.people=people;S.items=items;S.done=done;S.doneAt=doneAt;S.pend=pend;S.payouts=payouts;
   kv.forEach(r=>{if(r.key==='goals')S.goals=r.value;if(r.key==='presets')S.presets=r.value});
   if(S.me&&!people.some(p=>p.id===S.me))S.me='all';
   if(typeof prevCore!=='undefined')prevCore=coreJS();

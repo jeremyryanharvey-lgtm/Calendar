@@ -18,7 +18,7 @@ button{width:100%;padding:14px;border:0;border-radius:10px;background:#2764c5;co
 </head>
 <body><main>
 <h1>ChatgptPiP experiment</h1>
-<p>This is a proof of concept. It does <strong>not</strong> record the iPhone screen. A bookmarklet runs on the ChatGPT Safari page, reads visible conversation text, draws a simplified live view, and sends that generated video to Picture-in-Picture.</p>
+<p>This experiment runs entirely from a Safari bookmarklet. It reads ChatGPT message text on the current page, draws a simplified live view, and sends that generated video to Picture-in-Picture. It does not record your iPhone screen.</p>
 <h2>1. Create a Safari bookmarklet</h2>
 <ol>
 <li>In Safari, bookmark any page.</li>
@@ -26,9 +26,9 @@ button{width:100%;padding:14px;border:0;border-radius:10px;background:#2764c5;co
 <li>Rename it <strong>ChatgptPiP</strong>.</li>
 <li>Replace its address with the code below, then save.</li>
 </ol>
-<textarea id="code" readonly>javascript:(()=>{const s=document.createElement('script');s.src='https://raw.githubusercontent.com/jeremyryanharvey-lgtm/Calendar/main/chatgpt-pip.js?v=3';document.head.appendChild(s)})()</textarea>
+<textarea id="code" readonly>javascript:(()=>{if(window.__chatgptPiP){window.__chatgptPiP.stop();return}const W=900,H=1600,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d'),v=document.createElement('video'),b=document.createElement('button');v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.style.cssText='position:fixed;width:2px;height:2px;opacity:.01;left:0;bottom:0';document.body.append(v);b.textContent='Start ChatgptPiP';b.style.cssText='position:fixed;top:12px;right:12px;z-index:2147483647;padding:13px 17px;border:0;border-radius:12px;background:#2563eb;color:white;font:bold 15px sans-serif';document.body.append(b);function draw(){x.fillStyle='#212121';x.fillRect(0,0,W,H);x.fillStyle='#eee';x.font='bold 27px sans-serif';x.fillText('ChatGPT · live conversation',35,55);let y=110;const m=[...document.querySelectorAll('[data-message-author-role]')];for(const e of m){if(y>H-100)break;const t=(e.innerText||'').trim();if(!t)continue;const u=e.getAttribute('data-message-author-role')==='user';x.fillStyle=u?'#303b50':'#2b2b2b';x.fillRect(35,y,830,Math.min(400,Math.max(90,t.length/42*32+65)));x.fillStyle=u?'#a9c7ff':'#a8d5b0';x.font='bold 20px sans-serif';x.fillText(u?'You':'ChatGPT',55,y+30);x.fillStyle='#fff';x.font='22px sans-serif';let words=t.split(/\s+/),line='',n=0;for(const word of words){const z=line?line+' '+word:word;if(x.measureText(z).width>780){x.fillText(line,55,y+65+n*30);line=word;n++}else line=z;if(n>9)break}if(line&&n<10)x.fillText(line,55,y+65+n*30);y+=Math.min(420,Math.max(115,(n+3)*30))+18}}draw();let s;try{s=c.captureStream(2)}catch(e){alert('Canvas video is unavailable in this Safari version: '+e.message);b.remove();v.remove();return}v.srcObject=s;const o=new MutationObserver(draw);o.observe(document.body,{subtree:true,childList:true,characterData:true});let stopped=false;function stop(){if(stopped)return;stopped=true;o.disconnect();s.getTracks().forEach(t=>t.stop());v.pause();v.srcObject=null;v.remove();b.remove();delete window.__chatgptPiP}window.__chatgptPiP={stop};b.onclick=()=>{if(document.pictureInPictureElement||v.webkitPresentationMode==='picture-in-picture'){if(document.exitPictureInPicture)document.exitPictureInPicture();else if(v.webkitSetPresentationMode)v.webkitSetPresentationMode('inline');stop();return}try{const p=v.play();let q;if(v.requestPictureInPicture)q=v.requestPictureInPicture();else if(v.webkitSetPresentationMode){v.webkitSetPresentationMode('picture-in-picture');q=Promise.resolve()}else throw Error('Safari does not expose video Picture-in-Picture');Promise.all([p,q]).then(()=>b.textContent='Stop ChatgptPiP').catch(e=>alert('PiP failed: '+e.name+' – '+e.message))}catch(e){alert('PiP failed: '+e.message)}};window.addEventListener('pagehide',stop,{once:true})})()</textarea>
 <button id="copy">Copy bookmarklet code</button>
-<p class="note">If Safari removes the “javascript:” part when saving, edit the bookmark again and add it back at the start. Safari may restrict bookmarklet execution depending on its version and settings.</p>
+<p class="note">This version has the code inside the bookmark itself, so it does not need to download or inject an external JavaScript file. If Safari removes the “javascript:” part when saving, edit the bookmark again and add it back at the start.</p>
 <h2>2. Run it on ChatGPT</h2>
 <ol>
 <li>Open your ChatGPT conversation in its Safari tab.</li>
@@ -37,7 +37,7 @@ button{width:100%;padding:14px;border:0;border-radius:10px;background:#2764c5;co
 <li>Keep the ChatGPT tab open. New or changed message text should update the PiP view.</li>
 </ol>
 <h2>3. Stop it</h2>
-<p>Tap the blue <strong>PiP started · tap to stop</strong> button again to stop the preview, or close/reload the ChatGPT tab. If the button never appears after running the bookmarklet, the bookmarklet did not execute.</p>
+<p>Tap the blue <strong>Stop ChatgptPiP</strong> button to stop the preview, or close/reload the ChatGPT tab. If the button never appears after running the bookmarklet, the bookmarklet did not execute.</p>
 <p class="note"><strong>Known limitations:</strong> this is a text-and-layout approximation, not an exact screenshot. It may miss messages if ChatGPT changes its page structure, and iOS Safari may block bookmarklet-triggered video PiP. It is an experiment, not a guaranteed iPhone feature.</p>
 </main>
 <script>

@@ -9,12 +9,20 @@
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
   const video = document.createElement('video');
-  video.muted = true; video.playsInline = true;
-  video.style.cssText = 'position:fixed;width:2px;height:2px;opacity:.01;left:0;bottom:0;z-index:2147483647';
+  video.muted = true;
+  video.playsInline = true;
+  video.setAttribute('playsinline', '');
+  video.style.cssText = 'position:fixed;width:2px;height:2px;opacity:.01;left:0;bottom:0;z-index:2147483646';
   document.body.appendChild(video);
 
+  const control = document.createElement('button');
+  control.textContent = 'Start ChatgptPiP';
+  control.setAttribute('type', 'button');
+  control.style.cssText = 'position:fixed;top:12px;right:12px;z-index:2147483647;padding:13px 17px;border:0;border-radius:12px;background:#2563eb;color:white;font:700 15px -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 3px 14px #0008';
+  document.body.appendChild(control);
+
   function wrap(text, maxWidth) {
-    const words = String(text || '').replace(/\s+/g, ' ').trim().split(' ');
+    const words = String(text || '').replace(/\\s+/g, ' ').trim().split(' ');
     const lines = []; let line = '';
     for (const word of words) {
       const next = line ? line + ' ' + word : word;
@@ -61,22 +69,53 @@
   }
 
   draw();
-  const stream = canvas.captureStream(2);
+  let stream;
+  try {
+    stream = canvas.captureStream(2);
+  } catch (error) {
+    control.textContent = 'Canvas video unavailable';
+    control.disabled = true;
+    alert('Safari could not create the live canvas video: ' + error.message);
+    return;
+  }
   video.srcObject = stream;
   const observer = new MutationObserver(() => draw());
   observer.observe(document.body, {subtree:true, childList:true, characterData:true});
   let stopped = false;
   const stop = () => {
-    if (stopped) return; stopped = true;
-    observer.disconnect(); stream.getTracks().forEach(t => t.stop());
-    video.pause(); video.srcObject = null; video.remove();
+    if (stopped) return;
+    stopped = true;
+    observer.disconnect();
+    stream.getTracks().forEach(t => t.stop());
+    video.pause(); video.srcObject = null; video.remove(); control.remove();
     delete window.__chatgptPiPExperiment;
   };
   window.__chatgptPiPExperiment = { stop };
-  video.play().then(async () => {
-    if (video.requestPictureInPicture) await video.requestPictureInPicture();
-    else if (video.webkitSetPresentationMode) video.webkitSetPresentationMode('picture-in-picture');
-    else alert('This Safari page does not expose a PiP method for this video. Use the video player controls if available.');
-  }).catch(err => alert('Could not start the PiP preview: ' + err.message));
+
+  control.addEventListener('click', () => {
+    try {
+      // Both calls are made directly inside this tap so iOS receives a fresh
+      // user gesture for playback and the PiP request.
+      const playPromise = video.play();
+      let pipPromise;
+      if (video.requestPictureInPicture) pipPromise = video.requestPictureInPicture();
+      else if (video.webkitSetPresentationMode) {
+        video.webkitSetPresentationMode('picture-in-picture');
+        pipPromise = Promise.resolve();
+      } else {
+        throw new Error('This Safari version does not expose video Picture-in-Picture.');
+      }
+      Promise.all([playPromise, pipPromise]).then(() => {
+        control.textContent = 'PiP started · tap to stop';
+      }).catch(error => {
+        control.textContent = 'PiP failed · tap to retry';
+        alert('Safari could not start PiP: ' + error.name + ' – ' + error.message);
+      });
+    } catch (error) {
+      control.textContent = 'PiP failed · tap to retry';
+      alert('ChatgptPiP could not start: ' + error.message);
+    }
+  });
+
   window.addEventListener('pagehide', stop, {once:true});
 })();

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101114">
+<title>ChatgptPiP</title>
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#101114;color:#f4f4f5;min-height:100vh}
+main{width:min(760px,100%);margin:auto;padding:22px 16px 40px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.logo{width:40px;height:40px;display:grid;place-items:center;border:1px solid #41434c;border-radius:13px;font-size:22px}
+h1{font-size:19px;margin:0}.sub{font-size:12px;color:#a1a1aa;margin-top:3px}
+.note{padding:13px 14px;background:#1b1c21;border:1px solid #363741;border-radius:14px;color:#c8c8d0;font-size:13px;line-height:1.5;margin-bottom:16px}
+.panel{background:#18191e;border:1px solid #363741;border-radius:18px;overflow:hidden}
+.panelhead{padding:14px 16px;border-bottom:1px solid #30313a;display:flex;justify-content:space-between;align-items:center}
+.panelhead strong{font-size:14px}.state{font-size:12px;color:#8fd5a7}
+#messages{padding:16px;display:flex;flex-direction:column;gap:12px;max-height:44vh;min-height:180px;overflow:auto}
+.msg{max-width:90%;padding:11px 13px;border-radius:14px;font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.user{align-self:flex-end;background:#343944;border-bottom-right-radius:5px}
+.assistant{align-self:flex-start;background:#25262d;border:1px solid #393a44;border-bottom-left-radius:5px}
+.who{font-size:10px;letter-spacing:.07em;color:#a5a5af;margin-bottom:5px;font-weight:700}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:14px 16px;border-top:1px solid #30313a}
+button{border:0;border-radius:12px;padding:13px 12px;font-size:14px;font-weight:650;cursor:pointer}
+#start{background:#f4f4f5;color:#171717}#sample{background:#30313a;color:#fff;border:1px solid #454650}
+form{display:flex;gap:8px;margin-top:12px}input{flex:1;min-width:0;background:#1b1c21;color:white;border:1px solid #41424b;border-radius:12px;padding:12px;font-size:14px}form button{background:#286b49;color:white}
+.preview{margin-top:18px}.preview label{display:block;font-size:12px;color:#a1a1aa;margin-bottom:8px}
+video{display:block;width:100%;max-height:230px;aspect-ratio:16/9;background:#090a0c;border:1px solid #393a44;border-radius:14px;object-fit:contain}
+.foot{font-size:12px;line-height:1.5;color:#9696a0;margin-top:14px}
+@media(max-width:460px){main{padding:17px 12px 30px}.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="logo">✳</div><div><h1>ChatgptPiP</h1><div class="sub">Standalone HTML · iPhone Picture-in-Picture test</div></div></header>
+<div class="note"><b>What this tests:</b> this page draws the conversation preview below into a live video, then asks Safari to put that video into Picture-in-Picture. It does not capture or read your separate ChatGPT tab. Use the preview controls to test the PiP window.</div>
+<section class="panel">
+<div class="panelhead"><strong>Conversation preview</strong><span class="state" id="state">Ready</span></div>
+<div id="messages">
+<div class="msg user"><div class="who">YOU</div>Can I keep this conversation visible while I use other apps?</div>
+<div class="msg assistant"><div class="who">CHATGPT</div>This is a read-only preview. Start Picture-in-Picture, then switch apps to see whether iOS keeps the floating conversation visible.</div>
+</div>
+<div class="actions"><button id="start">Start Picture-in-Picture</button><button id="sample">Add sample response</button></div>
+</section>
+<form id="form"><input id="entry" maxlength="280" placeholder="Add a message to the preview…" autocomplete="off"><button>Add</button></form>
+<div class="preview"><label>Video source (keep visible for the first iOS test)</label><video id="pipVideo" playsinline muted controls></video></div>
+<p class="foot">iPhone test: open this page in Safari, tap Start Picture-in-Picture, then go to another app. If PiP starts, the floating window shows this page's preview, not the live ChatGPT website. iOS may refuse PiP for a canvas-generated video or suspend the page; either outcome tells us whether this technique is viable. This file adds no PWA manifest or service worker.</p>
+</main>
+<script>
+(()=>{
+const list=document.getElementById('messages'),video=document.getElementById('pipVideo'),state=document.getElementById('state'),start=document.getElementById('start');
+const canvas=document.createElement('canvas');canvas.width=720;canvas.height=900;const c=canvas.getContext('2d');let stream=null,raf=0,frame=0;
+function rounded(x,y,w,h,r,fill,stroke){c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke();}}
+function draw(){
+ frame++;c.fillStyle='#101114';c.fillRect(0,0,720,900);
+ c.fillStyle='#f4f4f5';c.font='bold 28px Arial';c.fillText('✳  ChatGPT',34,55);
+ c.fillStyle='#9b9ba5';c.font='16px Arial';c.fillText('Conversation preview',34,84);
+ c.strokeStyle='#33343c';c.beginPath();c.moveTo(34,108);c.lineTo(686,108);c.stroke();
+ let y=140;const items=[...list.children].map(el=>({user:el.classList.contains('user'),who:el.querySelector('.who')?.textContent||'',text:[...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim()}));
+ for(const item of items){
+  c.font='20px Arial';const max=item.user?500:610,lines=[];let line='';
+  for(const word of item.text.split(/\s+/)){const test=line?line+' '+word:word;if(c.measureText(test).width>max&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);
+  const h=58+lines.length*27,w=Math.min(640,Math.max(260,...lines.map(s=>c.measureText(s).width+42))),x=item.user?686-w:34;
+  if(y+h>810)break;rounded(x,y,w,h,17,item.user?'#343944':'#25262d',item.user?null:'#3a3b44');
+  c.fillStyle='#a1a1aa';c.font='bold 12px Arial';c.fillText(item.user?'YOU':'CHATGPT',x+19,y+23);
+  c.fillStyle='#f4f4f5';c.font='20px Arial';lines.forEach((s,i)=>c.fillText(s,x+19,y+51+i*27));y+=h+15;
+ }
+ c.fillStyle='#858792';c.font='14px Arial';c.fillText('Live preview',34,862);
+ c.fillStyle=frame%30<15?'#82d9a2':'#5b9d78';c.beginPath();c.arc(680,856,5,0,Math.PI*2);c.fill();
+ raf=requestAnimationFrame(draw);
+}
+function add(text,user){const el=document.createElement('div');el.className='msg '+(user?'user':'assistant');const who=document.createElement('div');who.className='who';who.textContent=user?'YOU':'CHATGPT';el.append(who,document.createTextNode(text));list.appendChild(el);list.scrollTop=list.scrollHeight;}
+document.getElementById('form').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('entry'),v=input.value.trim();if(v){add(v,true);input.value='';}});
+document.getElementById('sample').addEventListener('click',()=>add('This is a new sample response. The canvas video redraws the conversation preview as it changes.',false));
+start.addEventListener('click',async()=>{
+ try{
+  if(!document.pictureInPictureEnabled||!video.requestPictureInPicture){state.textContent='PiP API unavailable in this browser';return;}
+  if(!stream){stream=canvas.captureStream(12);video.srcObject=stream;}
+  if(!raf)draw();
+  await video.play();
+  await video.requestPictureInPicture();
+  state.textContent='PiP active';
+ }catch(e){state.textContent='Could not start PiP: '+(e.message||'unsupported');}
+});
+video.addEventListener('enterpictureinpicture',()=>state.textContent='PiP active');
+video.addEventListener('leavepictureinpicture',()=>state.textContent='PiP closed');
+})();
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#101114">
-<title>ChatgptPiP – Live Screen Capture</title>
+<title>ChatgptPiP – Clean Live Capture</title>
 <style>
 :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 *{box-sizing:border-box}
@@ -14,7 +14,7 @@ header{padding:16px;border-bottom:1px solid #30313a}
 h1{font-size:19px;margin:0 0 5px}
 p{line-height:1.5;color:#c4c4cc}
 main{padding:18px;max-width:680px;width:100%;margin:0 auto;flex:1}
-video{display:block;width:100%;background:#000;border-radius:12px;max-height:42vh}
+#screenVideo{position:fixed;width:1px;height:1px;left:0;top:0;opacity:.01;pointer-events:none}
 button{background:#2764c5;color:white;border:0;border-radius:10px;padding:13px 16px;font-weight:700;font-size:15px;width:100%;margin-top:12px}
 button.secondary{background:#343640}
 button:disabled{opacity:.45}
@@ -23,17 +23,16 @@ button:disabled{opacity:.45}
 </style>
 </head>
 <body>
-<header><h1>ChatgptPiP</h1><div class="note">Live screen capture → Picture-in-Picture experiment</div></header>
+<header><h1>ChatgptPiP</h1><div class="note">Clean live screen capture → Picture-in-Picture</div></header>
 <main>
- <p>This experiment asks Safari to share your screen, displays that live stream in a video, then tries to put the video into PiP. If supported, you can switch to ChatGPT while the floating video remains visible.</p>
- <video id="screenVideo" autoplay muted playsinline webkit-playsinline controls></video>
+ <p>This version deliberately hides the live video preview so it cannot show itself inside the captured screen and create the infinity mirror.</p>
  <button id="captureButton">1. Start screen sharing</button>
- <button id="pipButton" class="secondary" disabled>2. Put shared screen into PiP</button>
+ <button id="pipButton" class="secondary" disabled>2. Put live screen into PiP</button>
  <button id="stopButton" class="secondary" disabled>Stop screen sharing</button>
- <div id="status" role="status">Checking this Safari version…</div>
- <p class="note">Screen sharing is controlled by iOS. You must approve it in the system prompt. This page cannot secretly capture your screen.</p>
- <p class="note">If screen capture is unavailable, this page will say so rather than showing a pretend feed. The previous test already established that ordinary video PiP works on your phone; this test targets the missing live-capture step.</p>
+ <div id="status" role="status">Checking Safari screen-capture and PiP support…</div>
+ <p class="note">Approve screen sharing in the iOS prompt. After PiP starts, switch to ChatGPT or another app. The floating window should show the live screen. This page keeps the video element at 1 × 1 pixel rather than displaying its preview.</p>
 </main>
+<video id="screenVideo" autoplay muted playsinline webkit-playsinline></video>
 <script>
 const video=document.getElementById('screenVideo');
 const status=document.getElementById('status');
@@ -42,37 +41,27 @@ const pipButton=document.getElementById('pipButton');
 const stopButton=document.getElementById('stopButton');
 const captureAvailable=!!(navigator.mediaDevices&&typeof navigator.mediaDevices.getDisplayMedia==='function');
 const pipAvailable=typeof video.requestPictureInPicture==='function'||typeof video.webkitSetPresentationMode==='function';
-status.textContent='Screen capture API: '+(captureAvailable?'available':'NOT available in this Safari version')+'\nVideo PiP API: '+(pipAvailable?'available':'not exposed')+'\n\n';
-if(!captureAvailable){
- status.textContent+='This browser cannot provide a live screen stream to this webpage. The screen-capture approach cannot run on this device/browser version.';
- captureButton.disabled=true;
-}
+status.textContent='Screen capture API: '+(captureAvailable?'available':'not available')+'\nVideo PiP API: '+(pipAvailable?'available':'not exposed');
+if(!captureAvailable)captureButton.disabled=true;
 let stream=null;
 captureButton.addEventListener('click',async()=>{
- if(!captureAvailable)return;
  try{
   status.textContent='Waiting for iOS screen-sharing approval…';
   stream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
   video.srcObject=stream;
   await video.play();
-  pipButton.disabled=false;
-  stopButton.disabled=false;
-  captureButton.disabled=true;
-  status.textContent='Screen sharing is active. The video should show the shared screen. Next, put it into PiP, then switch to the ChatGPT tab.';
+  pipButton.disabled=false;stopButton.disabled=false;captureButton.disabled=true;
+  status.textContent='Live screen capture is running. Tap the PiP button. The preview is hidden to avoid the mirror effect.';
   stream.getVideoTracks()[0].addEventListener('ended',stopCapture);
- }catch(error){
-  status.textContent='Screen sharing did not start: '+error.name+' – '+error.message;
- }
+ }catch(error){status.textContent='Screen sharing did not start: '+error.name+' – '+error.message;}
 });
 pipButton.addEventListener('click',async()=>{
  try{
   await video.play();
-  if(typeof video.requestPictureInPicture==='function') await video.requestPictureInPicture();
-  else if(typeof video.webkitSetPresentationMode==='function') video.webkitSetPresentationMode('picture-in-picture');
-  status.textContent='PiP requested. If the floating window appears, switch to ChatGPT and see whether it shows the live screen.';
- }catch(error){
-  status.textContent='Could not enter PiP: '+error.name+' – '+error.message;
- }
+  if(typeof video.requestPictureInPicture==='function')await video.requestPictureInPicture();
+  else if(typeof video.webkitSetPresentationMode==='function')video.webkitSetPresentationMode('picture-in-picture');
+  status.textContent='PiP requested. Switch to ChatGPT. Check whether the floating window now shows your live screen without the recursive preview.';
+ }catch(error){status.textContent='Could not enter PiP: '+error.name+' – '+error.message;}
 });
 function stopCapture(){
  if(stream)stream.getTracks().forEach(track=>track.stop());
@@ -81,7 +70,7 @@ function stopCapture(){
  status.textContent='Screen sharing stopped.';
 }
 stopButton.addEventListener('click',stopCapture);
-video.addEventListener('enterpictureinpicture',()=>{status.textContent='PiP is active. Now switch to ChatGPT and check whether the captured screen follows.'});
+video.addEventListener('enterpictureinpicture',()=>{status.textContent='PiP is active. Switch to ChatGPT and see what the floating window shows.'});
 video.addEventListener('leavepictureinpicture',()=>{status.textContent='PiP window closed. Screen sharing may still be active.'});
 </script>
 </body>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#101114">
-<title>ChatgptPiP – Safari PiP Test</title>
+<title>ChatgptPiP – Live Screen Capture</title>
 <style>
 :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 *{box-sizing:border-box}
@@ -14,53 +14,75 @@ header{padding:16px;border-bottom:1px solid #30313a}
 h1{font-size:19px;margin:0 0 5px}
 p{line-height:1.5;color:#c4c4cc}
 main{padding:18px;max-width:680px;width:100%;margin:0 auto;flex:1}
-video{display:block;width:100%;background:#000;border-radius:12px;max-height:45vh}
-button{background:#2764c5;color:white;border:0;border-radius:10px;padding:13px 16px;font-weight:700;font-size:15px;width:100%;margin-top:14px}
-#status{font-size:13px;color:#a1a1aa;margin-top:12px;white-space:pre-wrap}
+video{display:block;width:100%;background:#000;border-radius:12px;max-height:42vh}
+button{background:#2764c5;color:white;border:0;border-radius:10px;padding:13px 16px;font-weight:700;font-size:15px;width:100%;margin-top:12px}
+button.secondary{background:#343640}
+button:disabled{opacity:.45}
+#status{font-size:13px;color:#c4c4cc;margin-top:14px;white-space:pre-wrap;line-height:1.5}
 .note{font-size:13px;color:#a1a1aa}
 </style>
 </head>
 <body>
-<header><h1>ChatgptPiP</h1><div class="note">Test 1: Can Safari put a normal video into Picture-in-Picture?</div></header>
+<header><h1>ChatgptPiP</h1><div class="note">Live screen capture → Picture-in-Picture experiment</div></header>
 <main>
- <p>First tap Play on the video. Then tap the button below. You can also try the PiP control in the video's own playback controls if Safari shows one.</p>
- <video id="testVideo" controls playsinline webkit-playsinline preload="metadata">
-  <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
-  Your browser cannot play this test video.
- </video>
- <button id="pipButton">Try Picture-in-Picture</button>
- <div id="status" role="status">Checking Safari's video PiP support…</div>
- <p class="note">This is deliberately a normal video, not a fake ChatGPT screen. It tests whether iPhone Safari can detach video into its floating PiP window. Passing this test does not yet mean we can capture the ChatGPT webpage.</p>
- <p class="note">The next technical hurdle is live screen capture. Your iPhone's current Safari version may not expose the screen-capture feature needed to turn the actual ChatGPT screen into a video.</p>
+ <p>This experiment asks Safari to share your screen, displays that live stream in a video, then tries to put the video into PiP. If supported, you can switch to ChatGPT while the floating video remains visible.</p>
+ <video id="screenVideo" autoplay muted playsinline webkit-playsinline controls></video>
+ <button id="captureButton">1. Start screen sharing</button>
+ <button id="pipButton" class="secondary" disabled>2. Put shared screen into PiP</button>
+ <button id="stopButton" class="secondary" disabled>Stop screen sharing</button>
+ <div id="status" role="status">Checking this Safari version…</div>
+ <p class="note">Screen sharing is controlled by iOS. You must approve it in the system prompt. This page cannot secretly capture your screen.</p>
+ <p class="note">If screen capture is unavailable, this page will say so rather than showing a pretend feed. The previous test already established that ordinary video PiP works on your phone; this test targets the missing live-capture step.</p>
 </main>
 <script>
-const video=document.getElementById('testVideo');
+const video=document.getElementById('screenVideo');
 const status=document.getElementById('status');
-const button=document.getElementById('pipButton');
-function report(){
- const standard=typeof video.requestPictureInPicture==='function';
- const webkit=typeof video.webkitSetPresentationMode==='function';
- status.textContent='Standard PiP API: '+(standard?'available':'not available')+'\nWebKit presentation-mode API: '+(webkit?'available':'not available')+'\nScreen capture API: '+(navigator.mediaDevices&&typeof navigator.mediaDevices.getDisplayMedia==='function'?'available':'not available in this Safari');
+const captureButton=document.getElementById('captureButton');
+const pipButton=document.getElementById('pipButton');
+const stopButton=document.getElementById('stopButton');
+const captureAvailable=!!(navigator.mediaDevices&&typeof navigator.mediaDevices.getDisplayMedia==='function');
+const pipAvailable=typeof video.requestPictureInPicture==='function'||typeof video.webkitSetPresentationMode==='function';
+status.textContent='Screen capture API: '+(captureAvailable?'available':'NOT available in this Safari version')+'\nVideo PiP API: '+(pipAvailable?'available':'not exposed')+'\n\n';
+if(!captureAvailable){
+ status.textContent+='This browser cannot provide a live screen stream to this webpage. The screen-capture approach cannot run on this device/browser version.';
+ captureButton.disabled=true;
 }
-report();
-button.addEventListener('click',async()=>{
+let stream=null;
+captureButton.addEventListener('click',async()=>{
+ if(!captureAvailable)return;
  try{
-  if(video.paused) await video.play();
-  if(typeof video.requestPictureInPicture==='function'){
-   await video.requestPictureInPicture();
-   status.textContent='PiP request accepted. Check whether the video is now floating.';
-  }else if(typeof video.webkitSetPresentationMode==='function'){
-   video.webkitSetPresentationMode('picture-in-picture');
-   status.textContent='Requested WebKit Picture-in-Picture mode.';
-  }else{
-   status.textContent='This Safari session does not expose a webpage PiP request. Try the native PiP control in the video player, if shown.';
-  }
+  status.textContent='Waiting for iOS screen-sharing approval…';
+  stream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+  video.srcObject=stream;
+  await video.play();
+  pipButton.disabled=false;
+  stopButton.disabled=false;
+  captureButton.disabled=true;
+  status.textContent='Screen sharing is active. The video should show the shared screen. Next, put it into PiP, then switch to the ChatGPT tab.';
+  stream.getVideoTracks()[0].addEventListener('ended',stopCapture);
  }catch(error){
-  status.textContent='PiP could not start: '+error.name+' – '+error.message+'\nTry starting playback first, then use the video player controls.';
+  status.textContent='Screen sharing did not start: '+error.name+' – '+error.message;
  }
 });
-video.addEventListener('enterpictureinpicture',()=>{status.textContent='Success: Safari entered Picture-in-Picture.'});
-video.addEventListener('leavepictureinpicture',()=>{status.textContent='PiP closed.'});
+pipButton.addEventListener('click',async()=>{
+ try{
+  await video.play();
+  if(typeof video.requestPictureInPicture==='function') await video.requestPictureInPicture();
+  else if(typeof video.webkitSetPresentationMode==='function') video.webkitSetPresentationMode('picture-in-picture');
+  status.textContent='PiP requested. If the floating window appears, switch to ChatGPT and see whether it shows the live screen.';
+ }catch(error){
+  status.textContent='Could not enter PiP: '+error.name+' – '+error.message;
+ }
+});
+function stopCapture(){
+ if(stream)stream.getTracks().forEach(track=>track.stop());
+ stream=null;video.srcObject=null;
+ captureButton.disabled=!captureAvailable;pipButton.disabled=true;stopButton.disabled=true;
+ status.textContent='Screen sharing stopped.';
+}
+stopButton.addEventListener('click',stopCapture);
+video.addEventListener('enterpictureinpicture',()=>{status.textContent='PiP is active. Now switch to ChatGPT and check whether the captured screen follows.'});
+video.addEventListener('leavepictureinpicture',()=>{status.textContent='PiP window closed. Screen sharing may still be active.'});
 </script>
 </body>
 </html>

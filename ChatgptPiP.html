@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#101114">
-<title>ChatgptPiP – Clean Live Capture</title>
+<title>ChatgptPiP – Full-screen Capture</title>
 <style>
 :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 *{box-sizing:border-box}
@@ -13,8 +13,8 @@ body{min-height:100dvh;display:flex;flex-direction:column}
 header{padding:16px;border-bottom:1px solid #30313a}
 h1{font-size:19px;margin:0 0 5px}
 p{line-height:1.5;color:#c4c4cc}
-main{padding:18px;max-width:680px;width:100%;margin:0 auto;flex:1}
-#screenVideo{position:fixed;width:1px;height:1px;left:0;top:0;opacity:.01;pointer-events:none}
+main{padding:16px;max-width:680px;width:100%;margin:0 auto;flex:1}
+video{display:block;width:100%;min-height:190px;max-height:55vh;background:#000;border-radius:12px;object-fit:contain}
 button{background:#2764c5;color:white;border:0;border-radius:10px;padding:13px 16px;font-weight:700;font-size:15px;width:100%;margin-top:12px}
 button.secondary{background:#343640}
 button:disabled{opacity:.45}
@@ -23,25 +23,27 @@ button:disabled{opacity:.45}
 </style>
 </head>
 <body>
-<header><h1>ChatgptPiP</h1><div class="note">Clean live screen capture → Picture-in-Picture</div></header>
+<header><h1>ChatgptPiP</h1><div class="note">Live screen capture → full-screen video → PiP</div></header>
 <main>
- <p>This version deliberately hides the live video preview so it cannot show itself inside the captured screen and create the infinity mirror.</p>
+ <p>Start screen sharing, then make the captured video full-screen. Use the PiP control in the full-screen video player's controls to move it into the floating window.</p>
+ <video id="screenVideo" autoplay muted playsinline webkit-playsinline controls></video>
  <button id="captureButton">1. Start screen sharing</button>
- <button id="pipButton" class="secondary" disabled>2. Put live screen into PiP</button>
+ <button id="fullButton" class="secondary" disabled>2. Full-screen the captured video</button>
+ <button id="pipButton" class="secondary" disabled>Try PiP (if Safari exposes it)</button>
  <button id="stopButton" class="secondary" disabled>Stop screen sharing</button>
- <div id="status" role="status">Checking Safari screen-capture and PiP support…</div>
- <p class="note">Approve screen sharing in the iOS prompt. After PiP starts, switch to ChatGPT or another app. The floating window should show the live screen. This page keeps the video element at 1 × 1 pixel rather than displaying its preview.</p>
+ <div id="status" role="status">Checking Safari screen-capture support…</div>
+ <p class="note">On iPhone, the full-screen video player may provide its own PiP control. If it does, use that control. Once the video is in PiP, switch to ChatGPT and see what the live capture displays.</p>
+ <p class="note">Because the screen capture includes the screen itself, a recursive mirror may appear while this page is visible. The goal of this test is to follow the full-screen-then-PiP workflow you described.</p>
 </main>
-<video id="screenVideo" autoplay muted playsinline webkit-playsinline></video>
 <script>
 const video=document.getElementById('screenVideo');
 const status=document.getElementById('status');
 const captureButton=document.getElementById('captureButton');
+const fullButton=document.getElementById('fullButton');
 const pipButton=document.getElementById('pipButton');
 const stopButton=document.getElementById('stopButton');
 const captureAvailable=!!(navigator.mediaDevices&&typeof navigator.mediaDevices.getDisplayMedia==='function');
-const pipAvailable=typeof video.requestPictureInPicture==='function'||typeof video.webkitSetPresentationMode==='function';
-status.textContent='Screen capture API: '+(captureAvailable?'available':'not available')+'\nVideo PiP API: '+(pipAvailable?'available':'not exposed');
+status.textContent='Screen capture API: '+(captureAvailable?'available':'not available')+'\nNative iPhone video full-screen: '+(typeof video.webkitEnterFullscreen==='function'?'available':'not exposed');
 if(!captureAvailable)captureButton.disabled=true;
 let stream=null;
 captureButton.addEventListener('click',async()=>{
@@ -50,28 +52,37 @@ captureButton.addEventListener('click',async()=>{
   stream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
   video.srcObject=stream;
   await video.play();
-  pipButton.disabled=false;stopButton.disabled=false;captureButton.disabled=true;
-  status.textContent='Live screen capture is running. Tap the PiP button. The preview is hidden to avoid the mirror effect.';
+  fullButton.disabled=false;pipButton.disabled=false;stopButton.disabled=false;captureButton.disabled=true;
+  status.textContent='Screen sharing is active. Tap “Full-screen the captured video”, then use the PiP control in the full-screen player.';
   stream.getVideoTracks()[0].addEventListener('ended',stopCapture);
  }catch(error){status.textContent='Screen sharing did not start: '+error.name+' – '+error.message;}
+});
+fullButton.addEventListener('click',async()=>{
+ try{
+  await video.play();
+  if(typeof video.webkitEnterFullscreen==='function')video.webkitEnterFullscreen();
+  else if(video.requestFullscreen)await video.requestFullscreen();
+  else status.textContent='This browser does not expose a full-screen video method. Use the video player’s expand control if available.';
+ }catch(error){status.textContent='Could not full-screen video: '+error.name+' – '+error.message;}
 });
 pipButton.addEventListener('click',async()=>{
  try{
   await video.play();
   if(typeof video.requestPictureInPicture==='function')await video.requestPictureInPicture();
   else if(typeof video.webkitSetPresentationMode==='function')video.webkitSetPresentationMode('picture-in-picture');
-  status.textContent='PiP requested. Switch to ChatGPT. Check whether the floating window now shows your live screen without the recursive preview.';
- }catch(error){status.textContent='Could not enter PiP: '+error.name+' – '+error.message;}
+  else status.textContent='No script PiP method is exposed. Use the native PiP control in the full-screen video player.';
+ }catch(error){status.textContent='Could not enter PiP: '+error.name+' – '+error.message+'. Try the native PiP control in the full-screen player.';}
 });
 function stopCapture(){
  if(stream)stream.getTracks().forEach(track=>track.stop());
  stream=null;video.srcObject=null;
- captureButton.disabled=!captureAvailable;pipButton.disabled=true;stopButton.disabled=true;
+ captureButton.disabled=!captureAvailable;fullButton.disabled=true;pipButton.disabled=true;stopButton.disabled=true;
  status.textContent='Screen sharing stopped.';
 }
 stopButton.addEventListener('click',stopCapture);
-video.addEventListener('enterpictureinpicture',()=>{status.textContent='PiP is active. Switch to ChatGPT and see what the floating window shows.'});
+video.addEventListener('enterpictureinpicture',()=>{status.textContent='PiP is active. Switch to ChatGPT and check the floating window.'});
 video.addEventListener('leavepictureinpicture',()=>{status.textContent='PiP window closed. Screen sharing may still be active.'});
+video.addEventListener('webkitbeginfullscreen',()=>{status.textContent='Video is full-screen. Use the player’s PiP control if shown.'});
 </script>
 </body>
 </html>
